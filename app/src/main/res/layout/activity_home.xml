@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:background="#D7E7E7"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".HomeActivity">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:visibility="gone"
+        android:background="@drawable/person_bg"
+        android:id="@+id/rl_app"
+        android:layout_height="match_parent">
+
+        <ImageView
+            android:layout_width="100px"
+            android:layout_height="100px"
+            android:layout_margin="70px"
+            android:id="@+id/back"
+            android:background="@drawable/back_all_app"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="200px"
+            android:id="@+id/tv_app"
+            android:text="音视频App"
+            android:layout_centerInParent="true"/>
+    </RelativeLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0px"
+        android:layout_weight="9">
+        <LinearLayout
+            android:layout_width="0px"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:layout_weight="3">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="0px"
+                android:orientation="vertical"
+                android:layout_weight="1"
+                android:gravity="bottom"
+                android:layout_marginStart="40px">
+                <Chronometer
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="60px"
+                    android:id="@+id/chronometer"/>
+                <TextView
+                    android:id="@+id/date"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="20px"
+                    android:textSize="32px"
+                    android:text="2025年7月1日 二月廿八"/>
+            </LinearLayout>
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="0px"
+                android:layout_marginTop="20px"
+                android:layout_weight="1"
+                android:id="@+id/cv_music"
+                app:cardCornerRadius="30px"
+                android:layout_marginBottom="20px"
+                android:layout_marginHorizontal="20px">
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="40px"
+                        android:textSize="32px"
+                        android:id="@+id/tv_music"
+                        android:text="理想三旬"/>
+
+                    <ImageView
+                        android:layout_width="70px"
+                        android:layout_height="70px"
+                        android:layout_margin="40px"
+                        android:id="@+id/iv_music"
+                        android:layout_alignParentEnd="true"
+                        android:background="@drawable/lixiangsanxun"/>
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="20px"
+                        android:layout_alignParentBottom="true"
+                        android:layout_centerHorizontal="true">
+                        <ImageView
+                            android:layout_width="40px"
+                            android:layout_height="40px"
+                            android:id="@+id/iv_left"
+                            android:background="@drawable/previos"/>
+                        <ImageView
+                            android:layout_width="40px"
+                            android:layout_height="40px"
+                            android:layout_marginHorizontal="100px"
+                            android:id="@+id/iv_play"
+                            android:background="@drawable/play_sel"/>
+                        <ImageView
+                            android:layout_width="40px"
+                            android:layout_height="40px"
+                            android:id="@+id/iv_right"
+                            android:background="@drawable/next_sing"/>
+                    </LinearLayout>
+                </RelativeLayout>
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="0px"
+                android:layout_weight="1"
+                android:id="@+id/cv_wea"
+                app:cardCornerRadius="30px"
+                android:layout_marginBottom="20px"
+                android:layout_marginHorizontal="20px">
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="40px"
+                        android:layout_marginTop="40px"
+                        android:layout_marginEnd="40px"
+                        android:layout_marginBottom="40px"
+                        android:text="17°C"
+                        android:textStyle="bold"
+                        android:textSize="44px" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="40px"
+                        android:layout_marginTop="100px"
+                        android:textSize="28px"
+                        android:text="北京 小雨 北风1~3级"/>
+
+                    <ImageView
+                        android:layout_width="70px"
+                        android:layout_height="70px"
+                        android:layout_alignParentEnd="true"
+                        android:layout_marginStart="40px"
+                        android:layout_marginTop="40px"
+                        android:layout_marginEnd="40px"
+                        android:layout_marginBottom="40px"
+                        android:background="@drawable/dayu" />
+
+                </RelativeLayout>
+            </androidx.cardview.widget.CardView>
+
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="0px"
+                android:id="@+id/cv_car"
+                android:layout_weight="1"
+                app:cardCornerRadius="30px"
+                android:layout_marginBottom="20px"
+                android:layout_marginHorizontal="20px">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:gravity="center_vertical"
+                    android:layout_marginStart="40px">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="28px"
+                        android:text="行驶距离：203KM"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="28px"
+                        android:text="出行次数：23次"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="28px"
+                        android:text="车内外温度：17/25°C"/>
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+        </LinearLayout>
+
+        <ImageView
+            android:layout_width="0px"
+            android:layout_height="match_parent"
+            android:layout_weight="8"
+            android:id="@+id/iv_wea"
+            android:layout_marginVertical="20px"
+            android:layout_marginEnd="20px"
+            android:background="@drawable/img_1"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0px"
+        android:layout_weight="1"
+        android:layout_marginBottom="10px"
+        android:background="@drawable/background"
+        android:layout_marginHorizontal="20px"
+        android:gravity="center">
+        <ImageView
+            android:layout_width="80px"
+            android:layout_height="80px"
+            android:id="@+id/one"
+            android:background="@drawable/add"/>
+
+        <ImageView
+            android:layout_width="80px"
+            android:layout_height="80px"
+            android:id="@+id/two"
+            android:layout_marginHorizontal="250px"
+            android:background="@drawable/add"/>
+        <ImageView
+            android:layout_width="80px"
+            android:layout_height="80px"
+            android:id="@+id/three"
+            android:background="@drawable/add"/>
+
+        <ImageView
+            android:layout_width="80px"
+            android:layout_height="80px"
+            android:id="@+id/four"
+            android:layout_marginHorizontal="250px"
+            android:background="@drawable/add"/>
+        <ImageView
+            android:layout_width="80px"
+            android:layout_height="80px"
+            android:id="@+id/five"
+            android:background="@drawable/add"/>
+
+    </LinearLayout>
+
+
+
+</LinearLayout>

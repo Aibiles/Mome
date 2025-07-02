@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/green_bg"
+    tools:context=".InitActivity">
+
+    <Chronometer
+        android:id="@+id/date"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="20px"
+        android:textColor="@color/white"
+        android:textSize="32px" />
+
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="20px"
+        android:gravity="center"
+        android:layout_alignParentEnd="true">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="19°C"
+            android:textColor="@color/white"
+            android:textSize="32px" />
+
+        <ImageView
+            android:id="@+id/iv_bat"
+            android:layout_width="150px"
+            android:layout_height="50px"
+            android:background="@drawable/battery_state_50" />
+    </LinearLayout>
+
+
+    <LinearLayout
+        android:id="@+id/ll_bar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="5px"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="50px"
+            android:layout_height="40px"
+            android:layout_marginEnd="80px"
+            android:background="@drawable/left" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:textColor="@color/white"
+            android:layout_height="wrap_content"
+            android:textSize="32px"
+            android:layout_marginEnd="80px"
+            android:text="HEV" />
+
+        <TextView
+            android:id="@+id/tv_direction"
+            android:textColor="@color/white"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="80px"
+            android:text="P"
+            android:textSize="60px" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:textColor="@color/white"
+            android:textSize="32px"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="80px"
+            android:text="ECO" />
+
+        <ImageView
+            android:layout_width="50px"
+            android:layout_height="40px"
+            android:background="@drawable/right" />
+    </LinearLayout>
+
+    <RelativeLayout
+        android:id="@+id/cameraInfoLayout"
+        android:layout_width="200dp"
+        android:background="@drawable/bg_info"
+        android:layout_centerInParent="true"
+        android:layout_height="200dp"
+        android:padding="16dp">
+
+        <!-- 摄像头方向图标 -->
+        <ImageView
+            android:id="@+id/ivCameraDirection"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="20dp"
+            android:src="@drawable/ic_camera_front"
+            android:background="@drawable/circle_bg"
+            android:padding="16dp"
+            android:scaleType="centerInside" />
+
+        <!-- 方向文本 -->
+        <TextView
+            android:id="@+id/tvCameraPosition"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/ivCameraDirection"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="12dp"
+            android:text="前方摄像头"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+<!--        &lt;!&ndash; 摄像头位置文本 &ndash;&gt;-->
+<!--        <TextView-->
+<!--            android:id="@+id/tvCameraPosition"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_below="@+id/tvDirection"-->
+<!--            android:layout_centerHorizontal="true"-->
+<!--            android:layout_marginTop="8dp"-->
+<!--            android:text="前方摄像头"-->
+<!--            android:textColor="#CCCCCC"-->
+<!--            android:textSize="16sp" />-->
+
+    </RelativeLayout>
+
+
+    <RelativeLayout
+        android:layout_width="600px"
+        android:clipChildren="true"
+        android:layout_alignParentBottom="true"
+        android:layout_height="600px">
+
+
+        <ImageView
+            android:layout_width="500px"
+            android:layout_height="500px"
+            android:layout_centerInParent="true"
+            android:background="@drawable/left_speed" />
+
+
+        <com.example.mome.view.Circle
+            android:id="@+id/left"
+            android:layout_centerInParent="true"
+            android:layout_width="500px"
+            android:layout_height="500px" />
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_centerInParent="true"
+            android:background="@drawable/circle" />
+
+        <TextView
+            android:id="@+id/tv_left"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="0"
+            android:textColor="@color/white"
+            android:textSize="80px" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="24px"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@id/tv_left"
+            android:text="km/h"
+            android:textColor="@color/white"/>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="600px"
+        android:layout_alignParentBottom="true"
+        android:layout_centerVertical="true"
+        android:layout_height="600px"
+        android:layout_alignParentEnd="true">
+
+
+        <ImageView
+            android:layout_centerInParent="true"
+            android:layout_width="500px"
+            android:layout_height="500px"
+            android:background="@drawable/left_speed" />
+        <com.example.mome.view.Circle
+            android:id="@+id/right"
+            android:layout_width="500px"
+            android:layout_centerInParent="true"
+            android:layout_height="500px" />
+
+        <ImageView
+            android:layout_width="500px"
+            android:layout_height="500px"
+            android:layout_centerInParent="true"
+            android:background="@drawable/circle" />
+
+        <TextView
+            android:id="@+id/tv_right"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:textColor="@color/white"
+            android:text="50"
+            android:textSize="80px" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:text="%"
+            android:textColor="@color/white"
+            android:layout_below="@id/tv_right"
+            android:textSize="24px" />
+    </RelativeLayout>
+
+</RelativeLayout>

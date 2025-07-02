@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="#99666666"
+    android:layout_height="match_parent">
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="1000px"
+        android:layout_height="800px"
+        app:cardCornerRadius="30px"
+        android:layout_centerInParent="true">
+        <RelativeLayout
+            android:background="@drawable/pop_background"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <ImageView
+                android:layout_width="70px"
+                android:layout_height="70px"
+                android:layout_margin="70px"
+                android:id="@+id/back"
+                android:background="@drawable/back_all_app"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="70px"
+                android:layout_centerHorizontal="true"
+                android:text="应用列表"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="150px"
+                android:id="@+id/rv_all"
+                android:layout_centerHorizontal="true"/>
+        </RelativeLayout>
+    </androidx.cardview.widget.CardView>
+
+</RelativeLayout>

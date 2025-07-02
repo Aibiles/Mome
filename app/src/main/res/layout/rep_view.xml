@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="#99666666"
+    android:layout_height="match_parent">
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="600px"
+        android:layout_height="700px"
+        app:cardCornerRadius="30px"
+
+        android:layout_centerInParent="true">
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:background="@drawable/pop_background"
+            android:layout_height="match_parent">
+            <ImageView
+                android:layout_width="70px"
+                android:layout_height="70px"
+                android:layout_margin="70px"
+                android:id="@+id/back"
+                android:background="@drawable/back_all_app"/>
+
+            <ImageView
+                android:layout_width="110px"
+                android:layout_height="110px"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="70px"
+                android:id="@+id/iv_icon"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/iv_icon"
+                android:layout_marginTop="20px"
+                android:layout_centerHorizontal="true"
+                android:id="@+id/tv_name"
+                android:textSize="32px"
+                android:maxLines="1"
+                android:clipToOutline="true"/>
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="280px"
+                android:layout_height="80px"
+                app:cardCornerRadius="30px"
+                android:layout_below="@id/tv_name"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="100px">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="#2764FE"
+                    android:textColor="@color/white"
+                    android:textSize="32px"
+                    android:gravity="center"
+                    android:text="替换应用"
+                    android:id="@+id/rep"/>
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="280px"
+                android:layout_height="80px"
+                app:cardCornerRadius="30px"
+                android:layout_below="@id/tv_name"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="200px">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="#2764FE"
+                    android:textColor="@color/white"
+                    android:textSize="32px"
+                    android:gravity="center"
+                    android:text="副屏启动"
+                    android:id="@+id/fu"/>
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="280px"
+                android:layout_height="80px"
+                app:cardCornerRadius="30px"
+                android:layout_below="@id/tv_name"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="300px">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="#2764FE"
+                    android:textColor="@color/white"
+                    android:textSize="32px"
+                    android:gravity="center"
+                    android:text="取消绑定"
+                    android:id="@+id/un"/>
+            </androidx.cardview.widget.CardView>
+
+        </RelativeLayout>
+    </androidx.cardview.widget.CardView>
+
+</RelativeLayout>

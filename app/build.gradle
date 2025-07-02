@@ -1,0 +1,83 @@
+plugins {
+    alias(libs.plugins.android.application)
+}
+
+android {
+    namespace 'com.example.mome'
+    compileSdk 33
+
+    defaultConfig {
+        applicationId "com.example.mome"
+        minSdk 24
+        targetSdk 33
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        
+        externalNativeBuild {
+            cmake {
+                cppFlags "-std=c++11 -frtti -fexceptions"
+                arguments "-DOpenCV_DIR=" + project(':OpenCV').projectDir + "/native/jni"
+                abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86_64'
+            }
+        }
+        
+        ndk {
+            abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86_64'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+
+    externalNativeBuild {
+        cmake {
+            version "3.10.2"
+            path file('src/main/jni/CMakeLists.txt')
+        }
+    }
+    
+    packagingOptions {
+        pickFirst '**/libc++_shared.so'
+        pickFirst '**/libopencv_java4.so'
+    }
+    
+    // 强制使用兼容的依赖版本
+    configurations.all {
+        resolutionStrategy {
+            force 'androidx.activity:activity:1.5.0'
+            force 'androidx.fragment:fragment:1.5.2'
+            force 'androidx.appcompat:appcompat:1.6.1'
+        }
+    }
+
+    dependencies {
+        implementation project(":OpenCV")
+    }
+}
+
+dependencies {
+    implementation libs.fastjson
+    implementation libs.appcompat
+    implementation libs.material
+    implementation libs.activity
+    implementation libs.constraintlayout
+    implementation project(':OpenCV')
+
+    implementation 'androidx.activity:activity:1.5.0'
+    implementation 'androidx.fragment:fragment:1.5.2'
+    implementation 'com.github.niqdev:ipcam-view:2.4.1'
+    
+    testImplementation libs.junit
+    androidTestImplementation libs.ext.junit
+    androidTestImplementation libs.espresso.core
+}
