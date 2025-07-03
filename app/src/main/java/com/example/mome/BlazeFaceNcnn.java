@@ -45,7 +45,7 @@ public class BlazeFaceNcnn {
 
     public native boolean loadSegModel(AssetManager mgr);
 
-    public native void detectSeg(Bitmap bitmap);
+    public native void detect(Bitmap bitmap);
 
     static {
         // 首先尝试加载OpenCV

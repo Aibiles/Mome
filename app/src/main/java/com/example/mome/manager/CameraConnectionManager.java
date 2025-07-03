@@ -224,8 +224,8 @@ public class CameraConnectionManager {
                 long currentTime = System.currentTimeMillis();
                 long timeSinceLastFrame = currentTime - connection.lastFrameTime;
                 
-                // 如果超过10秒没有收到帧，认为连接断开
-                if (timeSinceLastFrame > 10000) {
+                // 如果超过5秒没有收到帧，认为连接断开
+                if (timeSinceLastFrame > 5000) {
                     Log.w(TAG, "摄像头心跳检测失败: " + Camera360Config.getCameraName(cameraIndex));
                     
                     // 更新连接状态

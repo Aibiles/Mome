@@ -1,27 +1,38 @@
 package com.example.mome;
 
+import static android.view.View.VISIBLE;
+
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.app.ActivityCompat;
+
+import com.example.mome.config.Camera360Config;
+import com.github.niqdev.mjpeg.DisplayMode;
+import com.github.niqdev.mjpeg.Mjpeg;
+import com.github.niqdev.mjpeg.MjpegView;
+import com.github.niqdev.mjpeg.OnFrameCapturedListener;
 
 import java.util.Timer;
 import java.util.TimerTask;
 
 public class BlazeActivity extends AppCompatActivity {
-    private SurfaceView surfaceView;
-
+    private MjpegView mjpegView;
     private BlazeFaceNcnn ncnn = new BlazeFaceNcnn();
-    private Timer timer;
     private MediaPlayer player;
     private ImageView ivWarn;
 
@@ -39,107 +50,65 @@ public class BlazeActivity extends AppCompatActivity {
         player.start();
 
         ivWarn = findViewById(R.id.iv_warn);
-
-        surfaceView = findViewById(R.id.surface);
-        surfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
-            @Override
-            public void surfaceCreated(@NonNull SurfaceHolder surfaceHolder) {
-                ncnn.setOutputWindow(surfaceHolder.getSurface());
-
-            }
-
-            @Override
-            public void surfaceChanged(@NonNull SurfaceHolder surfaceHolder, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void surfaceDestroyed(@NonNull SurfaceHolder surfaceHolder) {
-
-            }
-        });
+        mjpegView = findViewById(R.id.mjpegView);
 
         ncnn.loadModel(getAssets(), 0, 0);
-
-        timer = new Timer();
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                if (ncnn.isWarn()) {
-                    runOnUiThread(()-> {
-                        player.setVolume(1, 1);
-                        if (ivWarn.getVisibility() != View.VISIBLE) {
-                            ivWarn.setVisibility(View.VISIBLE);
-                        }
-                    });
-                } else {
-                    runOnUiThread(()-> {
-                        player.setVolume(0, 0);
-                        if (ivWarn.getVisibility() == View.VISIBLE) {
-                            ivWarn.setVisibility(View.GONE);
-                        }
-                    });
-
-
-                }
-            }
-        }, 0, 500);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if (BlazeFaceNcnn.isOpenCVLoaded()) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-                ncnn.openCamera();
-            } else {
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 10);
-            }
-        } else {
-            // OpenCV未加载，等待一段时间后重试
-            surfaceView.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    onResume();
-                }
-            }, 1000);
-        }
+        Mjpeg.newInstance()
+            .open(Camera360Config.getCameraUrl(Camera360Config.CAMERA_TOP), 8)
+                .subscribe(
+                    inputStream -> {
+                        mjpegView.setSource(inputStream);
+                        mjpegView.setDisplayMode(DisplayMode.FULLSCREEN);
+                        mjpegView.showFps(false);
+
+                        // 设置帧捕获监听器
+                        mjpegView.setOnFrameCapturedListener(new OnFrameCapturedListener() {
+                            @Override
+                            public void onFrameCaptured(@NonNull Bitmap bitmap) {
+                                ncnn.detect(bitmap);
+                                runOnUiThread(()-> {
+                                    if (ncnn.isWarn()) {
+                                        player.setVolume(1, 1);
+                                        if (ivWarn.getVisibility() != View.VISIBLE) {
+                                            ivWarn.setVisibility(View.VISIBLE);
+                                        }
+                                    } else {
+                                        player.setVolume(0, 0);
+                                        if (ivWarn.getVisibility() == View.VISIBLE) {
+                                            ivWarn.setVisibility(View.GONE);
+                                        }
+                                    }
+                                });
+                            }
+
+                            @Override
+                            public void onFrameCapturedWithHeader(@NonNull byte[] bytes, @NonNull byte[] bytes1) {
+                                // 不使用
+                            }
+                        });
+                    },
+                    throwable -> {
+                        Log.e(getClass().getSimpleName(), "mjpeg error", throwable);
+                        Toast.makeText(this, Camera360Config.CAMERA_FACE + "连接错误", Toast.LENGTH_LONG).show();
+                    });
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (BlazeFaceNcnn.isOpenCVLoaded()) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-                ncnn.openCamera();
-            } else {
-                finish();
-            }
-        } else {
-            // OpenCV未加载完成，延迟打开相机
-            surfaceView.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    if (ActivityCompat.checkSelfPermission(BlazeActivity.this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-                        ncnn.openCamera();
-                    }
-                }
-            }, 1000);
-        }
-    }
 
     @Override
-    protected void onPause() {
-        super.onPause();
-        ncnn.closeCamera();
+    protected void onStop() {
+        super.onStop();
+//        mjpegView.stopPlayback();
+
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (timer != null) {
-            timer.cancel();
-        }
 
         if (player != null) {
             player.pause();

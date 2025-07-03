@@ -9,6 +9,8 @@ public class Camera360Config {
         "http://10.18.156.50:7778/video.mjpg", // 底部摄像头
         "http://10.18.156.50:7776/video.mjpg"  // 左侧摄像头
     };
+
+    public static String CAMERA_FACE = "http://10.18.212.137:7779/video.mjpg";
     
     // 摄像头位置标识
     public static final int CAMERA_TOP = 0;

@@ -47,7 +47,7 @@ void MyNdkCamera::on_image_render(cv::Mat &rgb) const {
         __android_log_print(ANDROID_LOG_ERROR, "BlazeFaceNcnn", "Invalid rgb Mat object");
         return;
     }
-    
+
     // 检查图像尺寸
     if (rgb.rows <= 0 || rgb.cols <= 0) {
         __android_log_print(ANDROID_LOG_ERROR, "BlazeFaceNcnn", "Invalid rgb Mat dimensions: %dx%d", rgb.cols, rgb.rows);
@@ -57,24 +57,24 @@ void MyNdkCamera::on_image_render(cv::Mat &rgb) const {
     {
         ncnn::MutexLockGuard g(lock);
 
-        if (g_blazeface) {
-            //如果模型加载成功 此处进行人脸识别
-            std::vector<Object> face;
-            g_blazeface->detect(rgb, face);
-            g_blazeface->draw(rgb, face);
-        } else {
-            __android_log_print(ANDROID_LOG_WARN, "BlazeFaceNcnn", "g_blazeface is null");
-        }
-
-//        if (g_paleenseg) {
-//            //如果模型加载成功 此处进行车道线分割和汽车人识别
-//            ncnn::Mat seg_out;
-//            std::vector<SegObject> objects;
-//            g_paleenseg->detect(rgb, objects, seg_out);
-//            g_paleenseg->draw(rgb, objects, seg_out);
+//        if (g_blazeface) {
+//            //如果模型加载成功 此处进行人脸识别
+//            std::vector<Object> face;
+//            g_blazeface->detect(rgb, face);
+//            g_blazeface->draw(rgb, face);
 //        } else {
 //            __android_log_print(ANDROID_LOG_WARN, "BlazeFaceNcnn", "g_blazeface is null");
 //        }
+
+        if (g_paleenseg) {
+            //如果模型加载成功 此处进行车道线分割和汽车人识别
+            ncnn::Mat seg_out;
+            std::vector<SegObject> objects;
+            g_paleenseg->detect(rgb, objects, seg_out);
+            g_paleenseg->draw(rgb, objects, seg_out);
+        } else {
+            __android_log_print(ANDROID_LOG_WARN, "BlazeFaceNcnn", "g_paleenseg is null");
+        }
 
     }
 }
@@ -175,8 +175,13 @@ void visualizeSegmentation(const ncnn::Mat& seg_out, void* output_pixels, int wi
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_mome_BlazeFaceNcnn_detectSeg(JNIEnv *env, jobject thiz, jobject bitmap) {
+Java_com_example_mome_BlazeFaceNcnn_detect(JNIEnv *env, jobject thiz, jobject bitmap) {
     // TODO: implement detectSeg()
+        if (!g_blazeface) {
+            __android_log_print(ANDROID_LOG_WARN, "BlazeFaceNcnn", "g_blazeface is null");
+            return;
+        }
+
     // 1. 获取 Bitmap 信息
     AndroidBitmapInfo info;
     void *pixels;
@@ -205,82 +210,15 @@ Java_com_example_mome_BlazeFaceNcnn_detectSeg(JNIEnv *env, jobject thiz, jobject
     cv::cvtColor(rgba_mat, bgr_mat, cv::COLOR_RGBA2BGR);
 
     // 5. 在 BGR 空间进行检测
-    ncnn::Mat seg_out;
-    std::vector<SegObject> objects;
-    g_paleenseg->detect(bgr_mat, objects, seg_out);
+    std::vector<Object> face;
+    g_blazeface->detect(bgr_mat, face);
+    g_blazeface->draw(bgr_mat, face);
 
-    // 6. 在原始图像上绘制分割结果
-    g_paleenseg->draw(bgr_mat, objects, seg_out);
-
-    // 7. 将处理后的 BGR 图像转换回 RGBA
+//     7. 将处理后的 BGR 图像转换回 RGBA
     cv::cvtColor(bgr_mat, rgba_mat, cv::COLOR_BGR2RGBA);
 
     // 8. 解锁 Bitmap
     AndroidBitmap_unlockPixels(env, bitmap);
-
-//    // 1. 获取输入 Bitmap 信息
-//    AndroidBitmapInfo input_info;
-//    void *input_pixels;
-//    if (AndroidBitmap_getInfo(env, input_bitmap, &input_info) < 0) {
-//        return;
-//    }
-//    if (input_info.format != ANDROID_BITMAP_FORMAT_RGBA_8888) {
-//        return; // 只支持 RGBA_8888 格式
-//    }
-//
-//    // 2. 锁定输入 Bitmap 像素
-//    if (AndroidBitmap_lockPixels(env, input_bitmap, &input_pixels) < 0) {
-//        return;
-//    }
-//
-//    // 3. 创建输入 Mat (RGBA)
-//    cv::Mat input_mat(
-//            input_info.height,
-//            input_info.width,
-//            CV_8UC4,
-//            input_pixels
-//    );
-//
-//    // 4. 转换为 BGR Mat (移除 Alpha 通道)
-//    cv::Mat bgr_mat;
-//    cv::cvtColor(input_mat, bgr_mat, cv::COLOR_RGBA2BGR);
-//
-//    // 5. 在BGR中进行检测
-//    ncnn::Mat seg_out;
-//    std::vector<SegObject> objects;
-//    g_paleenseg->detect(bgr_mat, objects, seg_out);
-//    g_paleenseg->draw(bgr_mat, objects, seg_out);
-//
-//
-//
-//    // 6. 获取输出 Bitmap 信息
-//    AndroidBitmapInfo output_info;
-//    void *output_pixels;
-//    if (AndroidBitmap_getInfo(env, output_bitmap, &output_info) < 0) {
-//        AndroidBitmap_unlockPixels(env, input_bitmap);
-//        return;
-//    }
-//
-//    // 7. 锁定输出 Bitmap 像素
-//    if (AndroidBitmap_lockPixels(env, output_bitmap, &output_pixels) < 0) {
-//        AndroidBitmap_unlockPixels(env, input_bitmap);
-//        return;
-//    }
-//
-//    // 8. 创建输出 Mat (RGBA)
-//    cv::Mat output_mat(
-//            output_info.height,
-//            output_info.width,
-//            CV_8UC4,
-//            output_pixels
-//    );
-//
-//    // 9. 将 BGR 转换回 RGBA
-//    cv::cvtColor(bgr_mat, output_mat, cv::COLOR_BGR2RGBA);
-//
-//    // 10. 解锁 Bitmaps
-//    AndroidBitmap_unlockPixels(env, input_bitmap);
-//    AndroidBitmap_unlockPixels(env, output_bitmap);
 }
 
 

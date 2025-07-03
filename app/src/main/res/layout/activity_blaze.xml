@@ -1,21 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:background="@color/black"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".BlazeActivity">
 
-    <SurfaceView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:id="@+id/surface"/>
 
-    <ImageView
-        android:layout_width="match_parent"
-        android:layout_height="160px"
-        android:visibility="gone"
-        android:background="@drawable/warring"
-        android:layout_alignParentBottom="true"
-        android:id="@+id/iv_warn"/>
-</RelativeLayout>
+    <FrameLayout
+        android:id="@+id/leftPanel"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="#1A1A1A"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <FrameLayout
+            android:id="@+id/mjpegFrame"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <!-- 前方摄像头视图 -->
+            <com.github.niqdev.mjpeg.MjpegSurfaceView
+                android:id="@+id/mjpegView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </FrameLayout>
+
+
+        <!-- 状态指示器 -->
+        <TextView
+            android:id="@+id/leftStatusText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|center_horizontal"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/status_text_bg"
+            android:padding="8dp"
+            android:text="前方摄像头"
+            android:textColor="@color/white"
+            android:textSize="16sp" />
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="53dp"
+            android:visibility="visible"
+            android:background="@drawable/warring"
+            android:layout_gravity="bottom"
+            android:id="@+id/iv_warn"/>
+
+    </FrameLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
