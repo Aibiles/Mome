@@ -73,12 +73,16 @@ public class BlazeActivity extends AppCompatActivity {
                                 ncnn.detect(bitmap);
                                 runOnUiThread(()-> {
                                     if (ncnn.isWarn()) {
-                                        player.setVolume(1, 1);
+                                        if (player != null) {
+                                            player.setVolume(1, 1);
+                                        }
                                         if (ivWarn.getVisibility() != View.VISIBLE) {
                                             ivWarn.setVisibility(View.VISIBLE);
                                         }
                                     } else {
-                                        player.setVolume(0, 0);
+                                        if (player != null) {
+                                            player.setVolume(0, 0);
+                                        }
                                         if (ivWarn.getVisibility() == View.VISIBLE) {
                                             ivWarn.setVisibility(View.GONE);
                                         }
@@ -98,14 +102,6 @@ public class BlazeActivity extends AppCompatActivity {
                     });
     }
 
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-//        mjpegView.stopPlayback();
-
-    }
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -113,6 +109,10 @@ public class BlazeActivity extends AppCompatActivity {
         if (player != null) {
             player.pause();
             player.release();
+            player = null;
         }
+
+        mjpegView.stopPlayback();
+
     }
 }

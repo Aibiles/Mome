@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:background="@drawable/activity_bg"
+    android:layout_height="match_parent"
+    tools:context=".VideoActivity">
+    <ImageView
+        android:layout_width="100px"
+        android:layout_height="100px"
+        android:layout_margin="70px"
+        android:background="@drawable/back"
+        android:id="@+id/back"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="70px"
+        android:layout_marginStart="210px"
+        android:id="@+id/rv_all"/>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#99666666"
+        android:visibility="gone"
+        android:id="@+id/rl_sel">
+
+        <LinearLayout
+            android:layout_width="900px"
+            android:layout_height="700px"
+            android:layout_centerInParent="true"
+            android:background="@drawable/pop_background"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="请选择"
+                android:textSize="44px" />
+
+            <LinearLayout
+                android:layout_width="800px"
+                android:layout_height="300px"
+                android:layout_marginVertical="40px">
+
+                <ImageView
+                    android:id="@+id/fu"
+                    android:layout_width="0px"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@drawable/selector_video_second_select" />
+
+                <ImageView
+                    android:id="@+id/all"
+                    android:layout_width="0px"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@drawable/selector_video_together_select" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tv_sure"
+                android:layout_width="300px"
+                android:layout_height="90px"
+                android:background="@drawable/sure_bg"
+                android:gravity="center"
+                android:text="确认"
+                android:textColor="@color/white"
+                android:textSize="44px" />
+
+        </LinearLayout>
+    </RelativeLayout>
+
+
+
+
+
+</RelativeLayout>

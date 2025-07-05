@@ -22,6 +22,7 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.IOException;
+import java.nio.MappedByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -90,6 +91,7 @@ public class HomeActivity extends AppCompatActivity {
             options.setLaunchDisplayId(displays[2].getDisplayId());
         }
         startActivity(intent, options.toBundle());
+        
 
 //        ivWea = findViewById(R.id.iv_wea);
 //        findViewById(R.id.cv_wea).setOnClickListener(v->{
@@ -197,6 +199,7 @@ public class HomeActivity extends AppCompatActivity {
                             startActivity(new Intent(this, BlazeActivity.class), animation.toBundle());
                             break;
                         case "3":
+                            startActivity(new Intent(this, VideoActivity.class), animation.toBundle());
                             break;
                         case "4":
                             startActivity(new Intent(this, DetectActivity.class), animation.toBundle());
@@ -253,6 +256,7 @@ public class HomeActivity extends AppCompatActivity {
                         intent = new Intent(getApplicationContext(), BlazeActivity.class);
                         break;
                     case "3":
+                        intent = new Intent(getApplicationContext(), VideoActivity.class);
                         break;
                     case "4":
                         intent = new Intent(getApplicationContext(), DetectActivity.class);

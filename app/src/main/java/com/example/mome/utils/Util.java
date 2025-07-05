@@ -10,6 +10,7 @@ import android.graphics.drawable.Drawable;
 
 import com.example.mome.R;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class Util {
@@ -17,6 +18,28 @@ public class Util {
     private static ArrayList<String> list;
     private static PackageManager packageManager;
     private static Context context;
+
+
+    private static ArrayList<String> videoList;
+
+    public static ArrayList<String> getVideo(Context context) {
+        if (videoList != null) {
+            return videoList;
+        }
+        videoList = new ArrayList<>();
+
+        try {
+            for (String s : context.getAssets().list("")) {
+                if (s.endsWith(".mp4")) {
+                    videoList.add(s);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return videoList;
+    }
 
     public static ArrayList<String> getList(Context context) {
         if (list != null) {

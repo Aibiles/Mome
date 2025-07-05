@@ -178,6 +178,7 @@ android {
             withJavadocJar()
         }
     }
+    ndkVersion '27.0.11902837 rc2'
 
 }
 
