@@ -1,11 +1,17 @@
 package com.example.mome;
 
+import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.transition.TransitionManager;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -13,11 +19,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.example.mome.config.Camera360Config;
+import com.example.mome.handle.GestureCallback;
+import com.example.mome.handle.GestureHandler;
 import com.example.mome.manager.CameraConnectionManager;
 import com.example.mome.manager.CameraStatusManager;
 import com.example.mome.manager.VehicleControlManager;
@@ -30,7 +40,8 @@ import org.opencv.android.OpenCVLoader;
 
 public class MomeActivity extends AppCompatActivity implements
         VehicleControlManager.VehicleControlListener,
-        CameraConnectionManager.ConnectionStatusListener {
+        CameraConnectionManager.ConnectionStatusListener,
+        GestureCallback {
     
     private static final String TAG = "MainActivity";
     // UI组件
@@ -41,7 +52,7 @@ public class MomeActivity extends AppCompatActivity implements
     private View frontStatus, rearStatus, leftStatus, rightStatus;
     
     // 控制按钮
-    private ImageButton btnForward, btnBackward, btnLeft, btnRight, btnStop, btnFullscreen;
+    private ImageButton btnForward, btnBackward, btnLeft, btnRight, btnStop;
     
     // 管理器
     private VehicleControlManager vehicleControlManager;
@@ -49,8 +60,6 @@ public class MomeActivity extends AppCompatActivity implements
     
     // 辅助线覆盖层
     private AssistLineOverlay assistLineOverlay;
-
-//    private final BlazeFaceNcnn ncnn = new BlazeFaceNcnn();
     
     // 全屏状态
     private boolean isFullscreenMode = false;
@@ -59,15 +68,15 @@ public class MomeActivity extends AppCompatActivity implements
     private FrameLayout leftPanel;
     
     // 当前全屏显示的摄像头索引
-    private int currentFullscreenCameraIndex = 0;
+    private View leftDivider;
+    private View centerDivider;
+    private ConstraintLayout mainLayout;
+    private ImageView ivPedal;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
-        // 初始化OpenCV
-        initOpenCV();
         
         setupFullScreen();
         setContentView(R.layout.activity_mome);
@@ -75,21 +84,6 @@ public class MomeActivity extends AppCompatActivity implements
         // 初始化组件
         initViews();
         initManagers();
-        
-        Log.d(TAG, "MainActivity 初始化完成");
-//        ncnn.loadSegModel(getAssets());
-    }
-    
-    /**
-     * 初始化OpenCV
-     */
-    private void initOpenCV() {
-        if (!OpenCVLoader.initLocal()) {
-            Log.e(TAG, "OpenCV初始化失败");
-            Toast.makeText(this, "OpenCV初始化失败", Toast.LENGTH_LONG).show();
-        } else {
-            Log.d(TAG, "OpenCV初始化成功");
-        }
     }
     
     /**
@@ -126,6 +120,8 @@ public class MomeActivity extends AppCompatActivity implements
         leftTrapezoidView = findViewById(R.id.leftTrapezoidView);
         rightTrapezoidView = findViewById(R.id.rightTrapezoidView);
         bottomTrapezoidView = findViewById(R.id.bottomTrapezoidView);
+        ivCar = findViewById(R.id.iv_car);
+
 
         // 叠加层和状态组件
         leftStatusText = findViewById(R.id.leftStatusText);
@@ -141,17 +137,22 @@ public class MomeActivity extends AppCompatActivity implements
         btnBackward = findViewById(R.id.btnBackward);
         btnLeft = findViewById(R.id.btnLeft);
         btnRight = findViewById(R.id.btnRight);
-        btnStop = findViewById(R.id.btnStop);
-        btnFullscreen = findViewById(R.id.btnFullscreen);
+        ivPedal = findViewById(R.id.iv_pedal);
+//        btnStop = findViewById(R.id.btnStop);
 
         // 控制面板和状态指示器
         controlPanel = findViewById(R.id.controlPanel);
         connectionStatus = findViewById(R.id.connectionStatus);
 
+        // 右侧视频
         leftPanel = findViewById(R.id.leftPanel);
 
+        // 分割线
+        leftDivider = findViewById(R.id.leftDivider);
+        centerDivider = findViewById(R.id.centerDivider);
 
-        ivCar = findViewById(R.id.iv_car);
+        // 约束布局
+        mainLayout = findViewById(R.id.main);
         
         // 设置按钮监听器
         setupControlButtons();
@@ -188,15 +189,19 @@ public class MomeActivity extends AppCompatActivity implements
         });
         
         // 停止按钮
-        btnStop.setOnClickListener(v -> {
-            vehicleControlManager.stop();
-            assistLineOverlay.clearLines();
-        });
+//        btnStop.setOnClickListener(v -> {
+//            vehicleControlManager.stop();
+//            assistLineOverlay.clearLines();
+//        });
         
         // 全屏切换按钮
-        btnFullscreen.setOnClickListener(v -> {
-            toggleFullscreenMode();
+        leftPanel.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                return false;
+            }
         });
+        GestureHandler gestureHandler = new GestureHandler(this, leftPanel, this);
     }
     
     /**
@@ -212,10 +217,10 @@ public class MomeActivity extends AppCompatActivity implements
         cameraConnectionManager.setStatusListener(this);
 
         // 添加摄像头
-        cameraConnectionManager.addCamera(Camera360Config.CAMERA_TOP, frontCameraView, topTrapezoidView);
-        cameraConnectionManager.addCamera(Camera360Config.CAMERA_BOTTOM, rearCameraView, bottomTrapezoidView);
-        cameraConnectionManager.addCamera(Camera360Config.CAMERA_LEFT, leftCameraView, leftTrapezoidView);
-        cameraConnectionManager.addCamera(Camera360Config.CAMERA_RIGHT, rightCameraView, rightTrapezoidView);
+//        cameraConnectionManager.addCamera(Camera360Config.CAMERA_TOP, frontCameraView, topTrapezoidView);
+//        cameraConnectionManager.addCamera(Camera360Config.CAMERA_BOTTOM, rearCameraView, bottomTrapezoidView);
+//        cameraConnectionManager.addCamera(Camera360Config.CAMERA_LEFT, leftCameraView, leftTrapezoidView);
+//        cameraConnectionManager.addCamera(Camera360Config.CAMERA_RIGHT, rightCameraView, rightTrapezoidView);
         
         // 初始化辅助线覆盖层
         assistLineOverlay = findViewById(R.id.assistLineOverlay);
@@ -447,96 +452,145 @@ public class MomeActivity extends AppCompatActivity implements
      * 进入全屏模式 - 只显示当前左侧摄像头
      */
     private void enterFullscreenMode() {
-        btnFullscreen.setSelected(true);
+        // 使用 ConstraintSet 实现平滑的约束变化动画
+        ConstraintSet constraintSet = new ConstraintSet();
+        constraintSet.clone(mainLayout);
 
-        // 获取当前左侧显示的摄像头位置
-        VehicleControlManager.CameraPosition currentCameraPosition = vehicleControlManager.getCurrentCamera();
-        currentFullscreenCameraIndex = currentCameraPosition.getValue();
-        
-        // 隐藏所有摄像头容器
-        frontCameraContainer.setVisibility(View.GONE);
-        rearCameraContainer.setVisibility(View.GONE);
-        leftCameraContainer.setVisibility(View.GONE);
-        rightCameraContainer.setVisibility(View.GONE);
-        
-        // 显示当前摄像头对应的容器
-        switch (currentCameraPosition) {
-            case FRONT:
-                frontCameraContainer.setVisibility(View.VISIBLE);
-                break;
-            case REAR:
-                rearCameraContainer.setVisibility(View.VISIBLE);
-                break;
-            case LEFT:
-                leftCameraContainer.setVisibility(View.VISIBLE);
-                break;
-            case RIGHT:
-                rightCameraContainer.setVisibility(View.VISIBLE);
-                break;
-        }
-        
-        // 隐藏梯形拼接视图
-        topTrapezoidView.setVisibility(View.GONE);
-        leftTrapezoidView.setVisibility(View.GONE);
-        rightTrapezoidView.setVisibility(View.GONE);
-        bottomTrapezoidView.setVisibility(View.GONE);
-        ivCar.setVisibility(View.GONE);
-        
-        // 隐藏控制面板和连接状态指示器
-        connectionStatus.setVisibility(View.GONE);
-        
-        // 隐藏分隔线
-        findViewById(R.id.leftDivider).setVisibility(View.GONE);
-        findViewById(R.id.centerDivider).setVisibility(View.GONE);
+        // 移动到底部
+        constraintSet.connect(
+                R.id.leftDivider,
+                ConstraintSet.BOTTOM,
+                ConstraintSet.PARENT_ID,
+                ConstraintSet.BOTTOM
+        );
 
+        constraintSet.connect(
+                R.id.centerDivider,
+                ConstraintSet.END,
+                ConstraintSet.PARENT_ID,
+                ConstraintSet.END
+        );
 
-        // 修改左侧面板布局参数以全屏显示
-        ViewGroup.LayoutParams layoutParams = leftPanel.getLayoutParams();
-        layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT;
-        layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
-        leftPanel.setLayoutParams(layoutParams);
-        
-        Log.d(TAG, "进入全屏模式 - 显示摄像头: " + VehicleControlManager.getCameraName(currentCameraPosition));
+        // 添加高度变化动画
+        animateDividerHeight(400, 0);
+
+        // 应用动画
+        TransitionManager.beginDelayedTransition(mainLayout);
+        constraintSet.applyTo(mainLayout);
+
+        // 添加颜色变化动画
+        animateDividerColor(200, "#000000");
     }
     
     /**
      * 退出全屏模式 - 恢复正常显示
      */
     private void exitFullscreenMode() {
-        btnFullscreen.setSelected(false);
 
-        // 恢复梯形拼接视图
-        topTrapezoidView.setVisibility(View.VISIBLE);
-        leftTrapezoidView.setVisibility(View.VISIBLE);
-        rightTrapezoidView.setVisibility(View.VISIBLE);
-        bottomTrapezoidView.setVisibility(View.VISIBLE);
-        ivCar.setVisibility(View.VISIBLE);
+        ConstraintSet constraintSet = new ConstraintSet();
+        constraintSet.clone(mainLayout);
 
-        
-        // 恢复控制面板和连接状态指示器
-        controlPanel.setVisibility(View.VISIBLE);
-        connectionStatus.setVisibility(View.VISIBLE);
-        
-        // 恢复分隔线
-        findViewById(R.id.leftDivider).setVisibility(View.VISIBLE);
-        findViewById(R.id.centerDivider).setVisibility(View.VISIBLE);
+        // 恢复原始约束：app:layout_constraintBottom_toTopOf="@id/guideline12"
+        constraintSet.connect(
+                R.id.leftDivider,
+                ConstraintSet.BOTTOM,
+                R.id.guideline12,
+                ConstraintSet.BOTTOM
+        );
 
-        // 恢复左侧面板的原始布局参数
-        ViewGroup.LayoutParams layoutParams = leftPanel.getLayoutParams();
-        layoutParams.height = 0;
-        layoutParams.width = 0;
-        leftPanel.setLayoutParams(layoutParams);
-        
-        // 恢复显示当前左侧摄像头
-        switchLeftCameraView(vehicleControlManager.getCurrentCamera());
+        constraintSet.connect(
+                R.id.centerDivider,
+                ConstraintSet.END,
+                R.id.guideline6,
+                ConstraintSet.END
+        );
 
-        
-        Log.d(TAG, "退出全屏模式 - 恢复到摄像头: " + VehicleControlManager.getCameraName(vehicleControlManager.getCurrentCamera()));
+        // 添加高度变化动画
+        animateDividerHeight(400, 1);
+
+        // 应用动画
+        TransitionManager.beginDelayedTransition(mainLayout);
+        constraintSet.applyTo(mainLayout);
+
+        // 添加颜色变化动画
+        animateDividerColor(200, "#333333");
+    }
+    private void animateDividerHeight(int duration, float alpha) {
+        ivCar.animate()
+                .alpha(alpha)
+                .setDuration(duration)
+                .start();
+        controlPanel.animate()
+                .alpha(alpha)
+                .setDuration(duration)
+                .start();
+        connectionStatus.animate()
+                .alpha(alpha)
+                .setDuration(duration)
+                .start();
+    }
+
+    private void animateDividerColor(int duration, String toColor) {
+        // 创建颜色变化动画
+        leftDivider.animate()
+                .setDuration(duration)
+                .withEndAction(() -> {
+                    leftDivider.setBackgroundColor(android.graphics.Color.parseColor(toColor));
+                    leftDivider.animate()
+                            .setDuration(200)
+                            .start();
+                })
+                .start();
+
+        centerDivider.animate()
+                .setDuration(duration)
+                .withEndAction(() -> {
+                    centerDivider.setBackgroundColor(android.graphics.Color.parseColor(toColor));
+                    centerDivider.animate()
+                            .setDuration(200)
+                            .start();
+                })
+                .start();
     }
 
     @Override
     protected void onStop() {
         super.onStop();
         cameraConnectionManager.disconnectAllCameras();
+    }
+
+    @Override
+    public void onToggleFullscreen() {
+        toggleFullscreenMode();
+    }
+
+    @Override
+    public void onSwipeLeft() {
+        vehicleControlManager.turnLeft();
+        startForwardTurnAssistLine();
+    }
+
+    @Override
+    public void onSwipeRight() {
+        vehicleControlManager.turnRight();
+        startForwardTurnAssistLine();
+    }
+
+    @Override
+    public void onSwipeUp() {
+        vehicleControlManager.moveForward();
+        startForwardTurnAssistLine();
+    }
+
+    @Override
+    public void onSwipeDown() {
+        vehicleControlManager.moveBackward();
+        startReverseAssistLine();
+    }
+
+    @Override
+    public void onLongPress() {
+        vehicleControlManager.stop();
+        assistLineOverlay.clearLines();
     }
 }

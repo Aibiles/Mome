@@ -28,6 +28,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 
+import com.amap.api.maps.MapView;
+import com.amap.api.maps.MapsInitializer;
+import com.autonavi.base.ae.gmap.GLMapEngine;
 import com.example.mome.utils.LunarCalender;
 import com.example.mome.view.*;
 import com.example.mome.utils.Util;
@@ -56,6 +59,7 @@ public class HomeActivity extends AppCompatActivity {
     private ArrayList<String> list;
     private MediaPlayer player;
     private ImageView ivPlay;
+    private MapView mapView;
 
     private void initPlayer(String s) {
         if (player != null) {
@@ -75,13 +79,7 @@ public class HomeActivity extends AppCompatActivity {
         ivMucis.setBackground(getDrawable(ints[index]));
     }
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_home);
-        getWindow().getDecorView().setSystemUiVisibility(5894);
-
-        systemService = (DisplayManager) getSystemService(Context.DISPLAY_SERVICE);
+    private void initView() {
         displays = systemService.getDisplays();
 
         Intent intent = new Intent(this, InitActivity.class);
@@ -91,29 +89,7 @@ public class HomeActivity extends AppCompatActivity {
             options.setLaunchDisplayId(displays[2].getDisplayId());
         }
         startActivity(intent, options.toBundle());
-        
 
-//        ivWea = findViewById(R.id.iv_wea);
-//        findViewById(R.id.cv_wea).setOnClickListener(v->{
-//            v.setSelected(!v.isSelected());
-//            ivWea.setBackground(getDrawable(v.isSelected() ? R.drawable.b : R.drawable.img_1));
-//        });
-//
-//        rlApp = findViewById(R.id.rl_app);
-//        tvApp = findViewById(R.id.tv_app);
-//        findViewById(R.id.cv_music).setOnClickListener(v->{
-//            Toast.makeText(this, "音视频App已打开", Toast.LENGTH_SHORT).show();
-//            tvApp.setText("音视频App");
-//            rlApp.setVisibility(View.VISIBLE);
-//        });
-//        findViewById(R.id.cv_car).setOnClickListener(v->{
-//            Toast.makeText(this, "车辆信息App已打开", Toast.LENGTH_SHORT).show();
-//            tvApp.setText("车辆信息App");
-//            rlApp.setVisibility(View.VISIBLE);
-//        });
-//        findViewById(R.id.back).setOnClickListener(v->rlApp.setVisibility(View.GONE));
-//
-//
         list = new ArrayList<>();
         try {
             for (String s : getAssets().list("")) {

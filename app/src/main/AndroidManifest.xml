@@ -34,7 +34,7 @@
             android:value="d4092d5238ec6b1095e79511b9d516e1"/>
 
         <activity
-            android:name=".HomeActivity"
+            android:name=".MomeActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -43,9 +43,9 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".InitActivity"
-            android:launchMode="singleTop"
-            android:exported="false"/>
+<!--        <activity android:name=".InitActivity"-->
+<!--            android:launchMode="singleTop"-->
+<!--            android:exported="false"/>-->
 <!--        <activity android:name=".MomeActivity"-->
 <!--            android:launchMode="singleTop"-->
 <!--            android:exported="false"/>-->

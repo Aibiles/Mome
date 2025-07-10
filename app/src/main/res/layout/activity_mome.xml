@@ -16,7 +16,7 @@
         android:layout_height="0dp"
         android:background="#1A1A1A"
         app:layout_constraintBottom_toTopOf="@+id/leftDivider"
-        app:layout_constraintEnd_toStartOf="@+id/guideline6"
+        app:layout_constraintEnd_toStartOf="@+id/centerDivider"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
@@ -41,6 +41,11 @@
                 android:id="@+id/rearCameraView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
+
+            <com.github.niqdev.mjpeg.MjpegSurfaceView
+                android:id="@+id/rightCameraView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
         </FrameLayout>
 
         <FrameLayout
@@ -61,27 +66,25 @@
             android:layout_height="match_parent"
             android:visibility="invisible">
             <!-- 右侧摄像头视图 -->
-            <com.github.niqdev.mjpeg.MjpegSurfaceView
-                android:id="@+id/rightCameraView"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent" />
         </FrameLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:orientation="vertical"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
             <View
                 android:layout_width="0dp"
                 android:layout_height="0dp"
-                android:visibility="invisible"
-                android:layout_weight="1"/>
+                android:layout_weight="1"
+                android:visibility="invisible" />
+
             <com.example.mome.view.AssistLineOverlay
                 android:id="@+id/assistLineOverlay"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="1"
                 android:layout_gravity="bottom"
+                android:layout_weight="1"
                 android:visibility="gone" />
         </LinearLayout>
         <!-- 辅助线覆盖层 -->
@@ -98,7 +101,7 @@
             android:padding="8dp"
             android:text="前方摄像头"
             android:textColor="@color/white"
-            android:textSize="16sp" />
+            android:textSize="14sp" />
 
     </FrameLayout>
 
@@ -108,39 +111,14 @@
         android:layout_width="0dp"
         android:layout_height="2dp"
         android:background="#333333"
-        app:layout_constraintBottom_toTopOf="@+id/guideline12"
-        app:layout_constraintEnd_toStartOf="@+id/guideline6" />
-
-    <!-- 全屏切换按钮 -->
-    <ImageButton
-        android:id="@+id/btnFullscreen"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginEnd="8dp"
-        android:background="@drawable/control_button_bg"
-        android:scaleType="centerInside"
-        android:src="@drawable/ic_full_select"
-        app:layout_constraintBottom_toBottomOf="@+id/controlPanel"
-        app:layout_constraintEnd_toStartOf="@+id/controlPanel"
-        app:layout_constraintTop_toTopOf="@+id/controlPanel" />
+        app:layout_constraintBottom_toBottomOf="@id/guideline12"
+        app:layout_constraintEnd_toStartOf="@+id/centerDivider" />
 
     <!-- 车辆控制面板 -->
 
     <!-- 停止按钮 -->
 
     <!-- 中央分隔线 -->
-
-    <ImageButton
-        android:id="@+id/btnStop"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:background="@drawable/control_button_bg"
-        android:scaleType="centerInside"
-        android:layout_marginStart="8dp"
-        android:src="@drawable/ic_stop"
-        app:layout_constraintBottom_toBottomOf="@+id/controlPanel"
-        app:layout_constraintStart_toEndOf="@+id/controlPanel"
-        app:layout_constraintTop_toTopOf="@+id/controlPanel" />
 
     <LinearLayout
         android:id="@+id/controlPanel"
@@ -151,10 +129,9 @@
         android:orientation="horizontal"
         android:padding="6dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/bottomTrapezoidView"
+        app:layout_constraintEnd_toStartOf="@+id/centerDivider"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/leftPanel"
-        app:layout_constraintTop_toTopOf="@+id/guideline12"
+        app:layout_constraintTop_toBottomOf="@+id/leftDivider"
         app:layout_constraintVertical_bias="0.916">
 
 
@@ -199,41 +176,41 @@
             android:scaleType="centerInside"
             android:src="@drawable/ic_arrow_right" />
 
-<!--                <LinearLayout-->
-<!--                    android:layout_width="wrap_content"-->
-<!--                    android:layout_height="wrap_content"-->
-<!--                    android:orientation="horizontal">-->
+        <!--                <LinearLayout-->
+        <!--                    android:layout_width="wrap_content"-->
+        <!--                    android:layout_height="wrap_content"-->
+        <!--                    android:orientation="horizontal">-->
 
-<!--                    &lt;!&ndash; 左转按钮 &ndash;&gt;-->
-<!--                    <ImageButton-->
-<!--                        android:id="@+id/btnLeft"-->
-<!--                        android:layout_width="30dp"-->
-<!--                        android:layout_height="30dp"-->
-<!--                        android:layout_marginEnd="8dp"-->
-<!--                        android:background="@drawable/control_button_bg"-->
-<!--                        android:scaleType="centerInside"-->
-<!--                        android:src="@drawable/ic_arrow_left" />-->
+        <!--                    &lt;!&ndash; 左转按钮 &ndash;&gt;-->
+        <!--                    <ImageButton-->
+        <!--                        android:id="@+id/btnLeft"-->
+        <!--                        android:layout_width="30dp"-->
+        <!--                        android:layout_height="30dp"-->
+        <!--                        android:layout_marginEnd="8dp"-->
+        <!--                        android:background="@drawable/control_button_bg"-->
+        <!--                        android:scaleType="centerInside"-->
+        <!--                        android:src="@drawable/ic_arrow_left" />-->
 
-<!--                    &lt;!&ndash; 停止按钮 &ndash;&gt;-->
-<!--                    <ImageButton-->
-<!--                        android:id="@+id/btnStop"-->
-<!--                        android:layout_width="30dp"-->
-<!--                        android:layout_height="30dp"-->
-<!--                        android:background="@drawable/stop_button_bg"-->
-<!--                        android:scaleType="centerInside"-->
-<!--                        android:src="@drawable/ic_stop" />-->
+        <!--                    &lt;!&ndash; 停止按钮 &ndash;&gt;-->
+        <!--                    <ImageButton-->
+        <!--                        android:id="@+id/btnStop"-->
+        <!--                        android:layout_width="30dp"-->
+        <!--                        android:layout_height="30dp"-->
+        <!--                        android:background="@drawable/stop_button_bg"-->
+        <!--                        android:scaleType="centerInside"-->
+        <!--                        android:src="@drawable/ic_stop" />-->
 
-<!--                    &lt;!&ndash; 右转按钮 &ndash;&gt;-->
-<!--                    <ImageButton-->
-<!--                        android:id="@+id/btnRight"-->
-<!--                        android:layout_width="30dp"-->
-<!--                        android:layout_height="30dp"-->
-<!--                        android:layout_marginStart="8dp"-->
-<!--                        android:background="@drawable/control_button_bg"-->
-<!--                        android:scaleType="centerInside"-->
-<!--                        android:src="@drawable/ic_arrow_right" />-->
+        <!--                    &lt;!&ndash; 右转按钮 &ndash;&gt;-->
+        <!--                    <ImageButton-->
+        <!--                        android:id="@+id/btnRight"-->
+        <!--                        android:layout_width="30dp"-->
+        <!--                        android:layout_height="30dp"-->
+        <!--                        android:layout_marginStart="8dp"-->
+        <!--                        android:background="@drawable/control_button_bg"-->
+        <!--                        android:scaleType="centerInside"-->
+        <!--                        android:src="@drawable/ic_arrow_right" />-->
 
-<!--                </LinearLayout>-->
+        <!--                </LinearLayout>-->
 
 
     </LinearLayout>
@@ -243,8 +220,7 @@
         android:layout_width="2dp"
         android:layout_height="match_parent"
         android:background="#333333"
-        app:layout_constraintEnd_toEndOf="@+id/leftPanel"
-        app:layout_constraintStart_toEndOf="@+id/leftPanel" />
+        app:layout_constraintEnd_toEndOf="@+id/guideline6" />
 
 
     <!-- 四个摄像头梯形拼接视图 -->
@@ -256,7 +232,7 @@
         android:scaleType="fitXY"
         app:layout_constraintBottom_toTopOf="@+id/guideline10"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="@+id/guideline6"
+        app:layout_constraintStart_toStartOf="@+id/centerDivider"
         app:layout_constraintTop_toTopOf="parent" />
 
     <!-- 左侧摄像头 -->
@@ -267,7 +243,7 @@
         android:scaleType="fitXY"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/guideline7"
-        app:layout_constraintStart_toEndOf="@+id/leftPanel"
+        app:layout_constraintStart_toEndOf="@+id/centerDivider"
         app:layout_constraintTop_toTopOf="parent" />
 
     <!-- 右侧摄像头 -->
@@ -292,7 +268,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toStartOf="@+id/guideline6"
+        app:layout_constraintStart_toStartOf="@+id/centerDivider"
         app:layout_constraintTop_toTopOf="@+id/guideline12"
         app:layout_constraintVertical_bias="0.0" />
 
@@ -307,7 +283,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/bottomTrapezoidView"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/guideline12"
+        app:layout_constraintTop_toTopOf="@+id/leftDivider"
         app:layout_constraintVertical_bias="0.125">
 
         <TextView
@@ -359,7 +335,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.65" />
+        app:layout_constraintGuide_percent="0.6497948" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline7"
@@ -393,16 +369,16 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.65" />
+        app:layout_constraintGuide_percent="0.649635" />
 
     <ImageView
         android:id="@+id/iv_car"
         android:layout_width="100dp"
         android:layout_height="0dp"
         app:layout_constraintBottom_toTopOf="@+id/bottomTrapezoidView"
-        app:layout_constraintEnd_toStartOf="@+id/rightTrapezoidView"
-        app:layout_constraintHorizontal_bias="0.511"
-        app:layout_constraintStart_toEndOf="@+id/leftTrapezoidView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.496"
+        app:layout_constraintStart_toEndOf="@+id/centerDivider"
         app:layout_constraintTop_toTopOf="@+id/guideline10"
         app:layout_constraintVertical_bias="0.0"
         stream:srcCompat="@drawable/car" />
@@ -415,5 +391,17 @@
         app:layout_constraintEnd_toStartOf="@+id/controlPanel"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/guideline12" />
+
+
+    <ImageView
+        android:id="@+id/iv_pedal"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/bottomTrapezoidView"
+        app:layout_constraintHorizontal_bias="0.83"
+        app:layout_constraintStart_toEndOf="@+id/controlPanel"
+        app:layout_constraintTop_toTopOf="@+id/guideline12"
+        stream:srcCompat="@drawable/pedal" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
