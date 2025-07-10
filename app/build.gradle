@@ -6,6 +6,12 @@ android {
     namespace 'com.example.mome'
     compileSdk 33
 
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['libs']
+        }
+    }
+
     defaultConfig {
         applicationId "com.example.mome"
         minSdk 24
@@ -63,7 +69,7 @@ android {
     dependencies {
         implementation project(":OpenCV")
     }
-    ndkVersion '27.0.11902837 rc2'
+//    ndkVersion '27.0.11902837 rc2'
 }
 
 dependencies {
@@ -77,9 +83,7 @@ dependencies {
     implementation 'androidx.activity:activity:1.5.0'
     implementation 'androidx.fragment:fragment:1.5.2'
     implementation 'com.github.niqdev:ipcam-view:2.4.1'
-    implementation("com.amap.api:3dmap:9.8.3")
-    implementation 'com.amap.api:3dmap-location-search:9.8.3'
-    
+
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core

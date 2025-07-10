@@ -1,11 +1,19 @@
 package com.example.mome;
 
+import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.transition.TransitionManager;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -13,14 +21,19 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.example.mome.config.Camera360Config;
+import com.example.mome.handle.GestureCallback;
+import com.example.mome.handle.GestureHandler;
 import com.example.mome.manager.CameraConnectionManager;
 import com.example.mome.manager.CameraStatusManager;
 import com.example.mome.manager.VehicleControlManager;
+import com.example.mome.manager.VehicleStatusManager;
 import com.example.mome.view.AssistLineOverlay;
 import com.github.niqdev.mjpeg.MjpegView;
 
@@ -30,7 +43,8 @@ import org.opencv.android.OpenCVLoader;
 
 public class MomeActivity extends AppCompatActivity implements
         VehicleControlManager.VehicleControlListener,
-        CameraConnectionManager.ConnectionStatusListener {
+        CameraConnectionManager.ConnectionStatusListener,
+        GestureCallback {
     
     private static final String TAG = "MainActivity";
     // UI组件
@@ -41,16 +55,15 @@ public class MomeActivity extends AppCompatActivity implements
     private View frontStatus, rearStatus, leftStatus, rightStatus;
     
     // 控制按钮
-    private ImageButton btnForward, btnBackward, btnLeft, btnRight, btnStop, btnFullscreen;
+    private ImageButton btnForward, btnBackward, btnLeft, btnRight, btnStop;
     
     // 管理器
     private VehicleControlManager vehicleControlManager;
     private CameraConnectionManager cameraConnectionManager;
+    private VehicleStatusManager vehicleStatusManager;
     
     // 辅助线覆盖层
     private AssistLineOverlay assistLineOverlay;
-
-//    private final BlazeFaceNcnn ncnn = new BlazeFaceNcnn();
     
     // 全屏状态
     private boolean isFullscreenMode = false;
@@ -59,27 +72,43 @@ public class MomeActivity extends AppCompatActivity implements
     private FrameLayout leftPanel;
     
     // 当前全屏显示的摄像头索引
-    private int currentFullscreenCameraIndex = 0;
+    private ImageView ivPedal;
+    private ImageView ivSwipeArrow;
 
+    // 踏板长按相关
+    private Handler pedalHandler = new Handler(Looper.getMainLooper());
+    private Runnable pedalPressRunnable;
+    private boolean isPedalPressed = false;
+    private float currentSpeed = 0f;
+    private float currentBattery = 100f;
+    private float pedalPressProgress = 0f;
+    private float baseProgress = 0f; // 基础进度，用于记忆功能
+    private ValueAnimator recoveryAnimator; // 恢复动画器
+    private static final float MAX_SPEED = 100f;
+    private static final float MIN_BATTERY = 0f;
+    private static final int PEDAL_UPDATE_INTERVAL = 50; // 50ms更新间隔
+    
+    // 电量消耗相关 - 独立于踏板进度
+    private int batteryConsumeCounter = 0; // 电量消耗计数器
+    private static final int BATTERY_CONSUME_INTERVAL = 40; // 每40次更新消耗1点电量 (40 * 50ms = 2秒消耗1点)
+    private FrameLayout flSwipeArrow;
+    private int currentFullscreenCameraIndex;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
+
         // 初始化OpenCV
         initOpenCV();
-        
+
         setupFullScreen();
         setContentView(R.layout.activity_mome);
         
         // 初始化组件
         initViews();
         initManagers();
-        
-        Log.d(TAG, "MainActivity 初始化完成");
-//        ncnn.loadSegModel(getAssets());
     }
-    
+
     /**
      * 初始化OpenCV
      */
@@ -126,6 +155,8 @@ public class MomeActivity extends AppCompatActivity implements
         leftTrapezoidView = findViewById(R.id.leftTrapezoidView);
         rightTrapezoidView = findViewById(R.id.rightTrapezoidView);
         bottomTrapezoidView = findViewById(R.id.bottomTrapezoidView);
+        ivCar = findViewById(R.id.iv_car);
+
 
         // 叠加层和状态组件
         leftStatusText = findViewById(R.id.leftStatusText);
@@ -141,17 +172,16 @@ public class MomeActivity extends AppCompatActivity implements
         btnBackward = findViewById(R.id.btnBackward);
         btnLeft = findViewById(R.id.btnLeft);
         btnRight = findViewById(R.id.btnRight);
-        btnStop = findViewById(R.id.btnStop);
-        btnFullscreen = findViewById(R.id.btnFullscreen);
+        ivPedal = findViewById(R.id.iv_pedal);
+        ivSwipeArrow = findViewById(R.id.iv_swipe_arrow);
+        flSwipeArrow = findViewById(R.id.fl_swipe_arrow);
 
         // 控制面板和状态指示器
         controlPanel = findViewById(R.id.controlPanel);
         connectionStatus = findViewById(R.id.connectionStatus);
 
+        // 右侧视频
         leftPanel = findViewById(R.id.leftPanel);
-
-
-        ivCar = findViewById(R.id.iv_car);
         
         // 设置按钮监听器
         setupControlButtons();
@@ -165,7 +195,6 @@ public class MomeActivity extends AppCompatActivity implements
         // 前进按钮（不需要辅助线）
         btnForward.setOnClickListener(v -> {
             vehicleControlManager.moveForward();
-            // 前进不显示辅助线，清除现有辅助线
             startForwardTurnAssistLine();
         });
 
@@ -187,16 +216,256 @@ public class MomeActivity extends AppCompatActivity implements
             startForwardTurnAssistLine();
         });
         
-        // 停止按钮
-        btnStop.setOnClickListener(v -> {
-            vehicleControlManager.stop();
-            assistLineOverlay.clearLines();
+        // 踏板长按监听器
+        ivPedal.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        ivPedal.animate().rotationX(-8).setDuration(100).start();
+                        startPedalPress();
+                        assistLineOverlay.setAutoSensorMode(false);
+                        return true;
+                    case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL:
+                        ivPedal.animate().rotationX(8).setDuration(100).start();
+                        assistLineOverlay.setAutoSensorMode(true);
+                        stopPedalPress();
+                        return true;
+                }
+                return false;
+            }
         });
+
+        GestureHandler gestureHandler = new GestureHandler(this, leftPanel, this);
+    }
+
+    /**
+     * 开始踏板长按
+     */
+    private void startPedalPress() {
+        if (isPedalPressed) return;
         
-        // 全屏切换按钮
-        btnFullscreen.setOnClickListener(v -> {
-            toggleFullscreenMode();
+        // 停止恢复动画（如果正在进行）
+        if (recoveryAnimator != null && recoveryAnimator.isRunning()) {
+            recoveryAnimator.cancel();
+        }
+        
+        isPedalPressed = true;
+        pedalPressProgress = baseProgress; // 从基础进度开始，而不是从0开始
+        
+        // 重置电量消耗计数器
+        batteryConsumeCounter = 0;
+        
+        // 开始显示辅助线
+        if (vehicleControlManager.getCurrentCamera() == VehicleControlManager.CameraPosition.REAR) {
+            startReverseAssistLine();
+        } else {
+            startForwardTurnAssistLine();
+        }
+        
+        // 立即更新一次UI以显示当前状态
+        updatePedalUI();
+        
+        // 通知车辆状态管理器踏板被按下
+        if (vehicleStatusManager != null) {
+            vehicleStatusManager.setPedalPressed(true);
+        }
+        
+        // 开始踏板长按更新循环
+        pedalPressRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (isPedalPressed) {
+                    updatePedalProgress();
+                    pedalHandler.postDelayed(this, PEDAL_UPDATE_INTERVAL);
+                }
+            }
+        };
+        pedalHandler.post(pedalPressRunnable);
+        
+        Log.d(TAG, String.format("开始踏板长按，从进度 %.2f 开始，当前电量 %.1f", baseProgress, currentBattery));
+    }
+    
+    /**
+     * 停止踏板长按
+     */
+    private void stopPedalPress() {
+        if (!isPedalPressed) return;
+        
+        isPedalPressed = false;
+        
+        // 停止更新循环
+        if (pedalPressRunnable != null) {
+            pedalHandler.removeCallbacks(pedalPressRunnable);
+        }
+        
+        // 保存当前进度作为基础进度
+        baseProgress = pedalPressProgress;
+        
+        // 通知车辆状态管理器踏板被松开
+        if (vehicleStatusManager != null) {
+            vehicleStatusManager.setPedalPressed(false);
+        }
+        
+        // 开始恢复动画
+        startPedalRelease();
+        
+        Log.d(TAG, "停止踏板长按");
+    }
+    
+    /**
+     * 更新踏板长按进度
+     */
+    private void updatePedalProgress() {
+        // 增加进度（0-1之间）
+        pedalPressProgress = Math.min(1f, pedalPressProgress + 0.02f);
+        
+        // 更新UI
+        updatePedalUI();
+        
+        Log.d(TAG, String.format("踏板进度: %.2f, 速度: %.1f, 电量: %.1f%%", 
+                pedalPressProgress, currentSpeed, currentBattery));
+    }
+    
+    /**
+     * 踏板松开后的恢复动画
+     */
+    private void startPedalRelease() {
+        // 如果基础进度已经是0，则不需要恢复动画
+        if (baseProgress <= 0f) {
+            if (assistLineOverlay != null) {
+                assistLineOverlay.clearLines();
+            }
+            return;
+        }
+        
+        recoveryAnimator = ValueAnimator.ofFloat(baseProgress, 0f);
+        recoveryAnimator.setDuration(500);
+        recoveryAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
+        
+        recoveryAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                float progress = (float) animation.getAnimatedValue();
+                
+                // 实时更新基础进度和显示进度
+                baseProgress = progress;
+                pedalPressProgress = progress;
+                
+                // 只更新速度和辅助线，不影响电量
+                currentSpeed = pedalPressProgress * MAX_SPEED;
+                updateAssistLineColor(pedalPressProgress);
+                
+                // 同步更新车辆状态管理器（保持电量不变）
+                if (vehicleStatusManager != null) {
+                    vehicleStatusManager.updateVehicleStatus(
+                        (int) currentSpeed,     // 速度随恢复动画变化
+                        (int) currentBattery,   // 电量保持不变
+                        pedalPressProgress,     // 踏板进度
+                        false                   // 踏板未按下
+                    );
+                }
+                
+                Log.d(TAG, String.format("恢复进度: %.2f, 速度: %.1f, 电量: %.1f%% (保持)", 
+                        progress, currentSpeed, currentBattery));
+            }
         });
+
+        
+        recoveryAnimator.start();
+        Log.d(TAG, String.format("开始恢复动画，从进度 %.2f 恢复到 0", baseProgress));
+    }
+    
+    /**
+     * 更新辅助线颜色
+     */
+    private void updateAssistLineColor(float progress) {
+        if (assistLineOverlay != null) {
+            // 使用AssistLineOverlay的新API来设置颜色进度
+            assistLineOverlay.setColorProgress(progress);
+        }
+    }
+    
+    /**
+     * 更新踏板相关UI
+     */
+    private void updatePedalUI() {
+        // 更新速度（基于踏板进度）
+        currentSpeed = pedalPressProgress * MAX_SPEED;
+        
+        // 更新电量（基于计数器消耗，只在踏板按下时消耗）
+        if (isPedalPressed) {
+            batteryConsumeCounter++;
+            if (batteryConsumeCounter >= BATTERY_CONSUME_INTERVAL) {
+                // 消耗1点电量
+                currentBattery = Math.max(MIN_BATTERY, currentBattery - 1);
+                batteryConsumeCounter = 0; // 重置计数器
+                Log.d(TAG, String.format("电量消耗：当前电量 %.1f%%", currentBattery));
+            }
+        }
+        
+        // 更新辅助线颜色
+        updateAssistLineColor(pedalPressProgress);
+        
+        // 同步更新车辆状态管理器
+        if (vehicleStatusManager != null) {
+            vehicleStatusManager.updateVehicleStatus(
+                (int) currentSpeed,     // 速度 (转换为int)
+                (int) currentBattery,   // 电量 (转换为int)
+                pedalPressProgress,     // 踏板进度
+                isPedalPressed          // 踏板按下状态
+            );
+        }
+    }
+    
+    /**
+     * 获取当前速度
+     */
+    public float getCurrentSpeed() {
+        return currentSpeed;
+    }
+    
+    /**
+     * 获取当前电量
+     */
+    public float getCurrentBattery() {
+        return currentBattery;
+    }
+    
+    /**
+     * 获取踏板按压进度
+     */
+    public float getPedalPressProgress() {
+        return pedalPressProgress;
+    }
+    
+    /**
+     * 是否正在按压踏板
+     */
+    public boolean isPedalPressed() {
+        return isPedalPressed;
+    }
+    
+    /**
+     * 获取基础进度（记忆功能）
+     */
+    public float getBaseProgress() {
+        return baseProgress;
+    }
+    
+    /**
+     * 重置电量到满电状态
+     */
+    public void resetBattery() {
+        currentBattery = 100f;
+        batteryConsumeCounter = 0;
+        Log.d(TAG, "电量已重置到100%");
+        
+        // 同步更新状态管理器
+        if (vehicleStatusManager != null) {
+            vehicleStatusManager.updateBattery(100);
+        }
     }
     
     /**
@@ -210,6 +479,9 @@ public class MomeActivity extends AppCompatActivity implements
         // 初始化摄像头连接管理器
         cameraConnectionManager = new CameraConnectionManager(this, this);
         cameraConnectionManager.setStatusListener(this);
+
+        // 初始化车辆状态管理器
+        vehicleStatusManager = VehicleStatusManager.getInstance();
 
         // 添加摄像头
         cameraConnectionManager.addCamera(Camera360Config.CAMERA_TOP, frontCameraView, topTrapezoidView);
@@ -247,6 +519,11 @@ public class MomeActivity extends AppCompatActivity implements
             assistLineOverlay.clearLines();
         }
         
+        // 隐藏滑动箭头
+        if (flSwipeArrow != null) {
+            flSwipeArrow.setVisibility(View.GONE);
+        }
+        
         // 暂停所有MjpegView播放
         if (frontCameraView != null) frontCameraView.stopPlayback();
         if (rearCameraView != null) rearCameraView.stopPlayback();
@@ -260,6 +537,23 @@ public class MomeActivity extends AppCompatActivity implements
     protected void onDestroy() {
         super.onDestroy();
 
+        // 清理踏板相关资源
+        if (pedalHandler != null) {
+            pedalHandler.removeCallbacksAndMessages(null);
+        }
+        
+        // 清理恢复动画
+        if (recoveryAnimator != null && recoveryAnimator.isRunning()) {
+            recoveryAnimator.cancel();
+        }
+        
+        // 清理滑动箭头动画
+        if (flSwipeArrow != null) {
+            flSwipeArrow.clearAnimation();
+            flSwipeArrow.animate().cancel();
+            flSwipeArrow.setVisibility(View.GONE);
+        }
+        
         // 清理辅助线覆盖层
         if (assistLineOverlay != null) {
             assistLineOverlay.cleanup();
@@ -322,17 +616,28 @@ public class MomeActivity extends AppCompatActivity implements
         switch (cameraPosition) {
             case FRONT:
                 frontCameraContainer.setVisibility(View.VISIBLE);
+                leftStatusText.setText("前方摄像头");
                 break;
             case REAR:
                 rearCameraContainer.setVisibility(View.VISIBLE);
+                leftStatusText.setText("后方摄像头");
                 break;
             case LEFT:
                 leftCameraContainer.setVisibility(View.VISIBLE);
+                leftStatusText.setText("左侧摄像头");
                 break;
             case RIGHT:
                 rightCameraContainer.setVisibility(View.VISIBLE);
+                leftStatusText.setText("右侧摄像头");
                 break;
         }
+        
+        // 更新全局摄像头状态管理器
+        CameraStatusManager.getInstance().updateCameraStatus(
+            VehicleControlManager.Direction.STOP, 
+            cameraPosition);
+        
+        Log.d(TAG, "切换摄像头: " + cameraPosition);
     }
     
     // CameraConnectionManager.ConnectionStatusListener 实现
@@ -447,12 +752,11 @@ public class MomeActivity extends AppCompatActivity implements
      * 进入全屏模式 - 只显示当前左侧摄像头
      */
     private void enterFullscreenMode() {
-        btnFullscreen.setSelected(true);
 
         // 获取当前左侧显示的摄像头位置
         VehicleControlManager.CameraPosition currentCameraPosition = vehicleControlManager.getCurrentCamera();
         currentFullscreenCameraIndex = currentCameraPosition.getValue();
-        
+
         // 隐藏所有摄像头容器
         frontCameraContainer.setVisibility(View.GONE);
         rearCameraContainer.setVisibility(View.GONE);
@@ -483,8 +787,8 @@ public class MomeActivity extends AppCompatActivity implements
         ivCar.setVisibility(View.GONE);
         
         // 隐藏控制面板和连接状态指示器
-        connectionStatus.setVisibility(View.GONE);
-        
+        controlPanel.setVisibility(View.INVISIBLE);
+
         // 隐藏分隔线
         findViewById(R.id.leftDivider).setVisibility(View.GONE);
         findViewById(R.id.centerDivider).setVisibility(View.GONE);
@@ -503,7 +807,6 @@ public class MomeActivity extends AppCompatActivity implements
      * 退出全屏模式 - 恢复正常显示
      */
     private void exitFullscreenMode() {
-        btnFullscreen.setSelected(false);
 
         // 恢复梯形拼接视图
         topTrapezoidView.setVisibility(View.VISIBLE);
@@ -515,8 +818,7 @@ public class MomeActivity extends AppCompatActivity implements
         
         // 恢复控制面板和连接状态指示器
         controlPanel.setVisibility(View.VISIBLE);
-        connectionStatus.setVisibility(View.VISIBLE);
-        
+
         // 恢复分隔线
         findViewById(R.id.leftDivider).setVisibility(View.VISIBLE);
         findViewById(R.id.centerDivider).setVisibility(View.VISIBLE);
@@ -530,7 +832,7 @@ public class MomeActivity extends AppCompatActivity implements
         // 恢复显示当前左侧摄像头
         switchLeftCameraView(vehicleControlManager.getCurrentCamera());
 
-        
+
         Log.d(TAG, "退出全屏模式 - 恢复到摄像头: " + VehicleControlManager.getCameraName(vehicleControlManager.getCurrentCamera()));
     }
 
@@ -538,5 +840,112 @@ public class MomeActivity extends AppCompatActivity implements
     protected void onStop() {
         super.onStop();
         cameraConnectionManager.disconnectAllCameras();
+    }
+
+    @Override
+    public void onToggleFullscreen() {
+        toggleFullscreenMode();
+    }
+
+        @Override
+    public void onSwipeLeft() {
+        // 抬起时切换到左侧摄像头
+        vehicleControlManager.turnLeft();
+        startForwardTurnAssistLine();
+        hideSwipeArrow();
+        Log.d(TAG, "滑动结束：切换到左侧摄像头");
+    }
+
+    @Override
+    public void onSwipeRight() {
+        // 抬起时切换到右侧摄像头
+        vehicleControlManager.turnRight();
+        startForwardTurnAssistLine();
+        hideSwipeArrow();
+        Log.d(TAG, "滑动结束：切换到右侧摄像头");
+    }
+
+    @Override
+    public void onSwipeUp() {
+        // 抬起时切换到前方摄像头
+        vehicleControlManager.moveForward();
+        startForwardTurnAssistLine();
+        hideSwipeArrow();
+        Log.d(TAG, "滑动结束：切换到前方摄像头");
+    }
+
+    @Override
+    public void onSwipeDown() {
+        // 抬起时切换到后方摄像头
+        vehicleControlManager.moveBackward();
+        startReverseAssistLine();
+        hideSwipeArrow();
+        Log.d(TAG, "滑动结束：切换到后方摄像头");
+    }
+
+    @Override
+    public void onLongPress() {
+        vehicleControlManager.stop();
+        assistLineOverlay.clearLines();
+    }
+
+    @Override
+    public void onIconLeft() {
+//        ivSwipeArrow.setRotation(-45);
+        ivSwipeArrow.animate().rotation(-45).setDuration(200).start();
+        showSwipeArrow(R.drawable.wheel);
+        Log.d(TAG, "显示左箭头");
+    }
+
+    @Override
+    public void onIconRight() {
+        showSwipeArrow(R.drawable.wheel);
+//        ivSwipeArrow.setRotation(45);
+        ivSwipeArrow.animate().rotation(45).setDuration(200).start();
+
+        Log.d(TAG, "显示右箭头");
+    }
+
+    @Override
+    public void onIconUp() {
+//        ivSwipeArrow.setRotation(0);
+        ivSwipeArrow.animate().rotation(0).setDuration(200).start();
+        showSwipeArrow(R.drawable.wheel);
+        Log.d(TAG, "显示上箭头");
+    }
+
+    @Override
+    public void onIconDown() {
+        ivSwipeArrow.setRotation(0);
+        showSwipeArrow(R.drawable.reverse_car);
+        Log.d(TAG, "显示下箭头");
+    }
+    
+    /**
+     * 显示滑动方向箭头
+     */
+    private void showSwipeArrow(int arrowResourceId) {
+        if (flSwipeArrow == null) return;
+        
+        ivSwipeArrow.setImageResource(arrowResourceId);
+        flSwipeArrow.setVisibility(View.VISIBLE);
+        flSwipeArrow.setAlpha(0.8f);
+    }
+    
+    /**
+     * 隐藏滑动箭头
+     */
+    private void hideSwipeArrow() {
+        if (flSwipeArrow == null) return;
+
+        flSwipeArrow.animate()
+                .alpha(0f)
+                .setDuration(200)
+                .withEndAction(() -> {
+                    if (flSwipeArrow != null) {
+                        flSwipeArrow.setVisibility(View.GONE);
+                    }
+                })
+                .start();
     }
 }

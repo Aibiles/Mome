@@ -4,13 +4,13 @@ public class Camera360Config {
     
     // 摄像头连接配置
     public static final String[] CAMERA_URLS = {
-        "http://192.168.43.175:7777/video.mjpg", // 顶部摄像头
+        "http://10.18.156.50:7777/video.mjpg", // 顶部摄像头
         "http://10.18.156.50:7775/video.mjpg", // 右侧摄像头  
         "http://10.18.156.50:7778/video.mjpg", // 底部摄像头
         "http://10.18.156.50:7776/video.mjpg"  // 左侧摄像头
     };
 
-    public static String CAMERA_FACE = "http://192.168.43.175:7779/video.mjpg";
+    public static String CAMERA_FACE = "http://10.18.156.50:7777/video.mjpg";
     
     // 摄像头位置标识
     public static final int CAMERA_TOP = 0;

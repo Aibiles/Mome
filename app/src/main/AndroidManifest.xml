@@ -46,23 +46,23 @@
         <activity android:name=".InitActivity"
             android:launchMode="singleTop"
             android:exported="false"/>
-<!--        <activity android:name=".MomeActivity"-->
-<!--            android:launchMode="singleTop"-->
-<!--            android:exported="false"/>-->
-<!--        <activity android:name=".DetectActivity"-->
-<!--            android:launchMode="singleTop"-->
-<!--            android:exported="false"/>-->
-<!--        <activity android:name=".BlazeActivity"-->
-<!--            android:launchMode="singleTop"-->
-<!--            android:exported="false"/>-->
-<!--        <activity-->
-<!--            android:name=".FuActivity"-->
-<!--            android:exported="false" />-->
-<!--        <activity-->
-<!--            android:name=".VideoActivity"-->
-<!--            android:launchMode="singleTop"-->
-<!--            android:exported="false">-->
-<!--        </activity>-->
+        <activity android:name=".MomeActivity"
+            android:launchMode="singleTop"
+            android:exported="false"/>
+        <activity android:name=".DetectActivity"
+            android:launchMode="singleTop"
+            android:exported="false"/>
+        <activity android:name=".BlazeActivity"
+            android:launchMode="singleTop"
+            android:exported="false"/>
+        <activity
+            android:name=".FuActivity"
+            android:exported="false" />
+        <activity
+            android:name=".VideoActivity"
+            android:launchMode="singleTop"
+            android:exported="false">
+        </activity>
     </application>
 
 </manifest>

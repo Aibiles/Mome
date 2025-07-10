@@ -739,4 +739,31 @@ public class AssistLineOverlay extends View {
     public boolean isAutoSensorMode() {
         return isAutoSensorMode;
     }
+    
+    /**
+     * 手动设置辅助线颜色（用于外部控制）
+     */
+    public void setAssistLineColor(int color) {
+        if (currentColor != color) {
+            currentColor = color;
+            Log.d(TAG, String.format("手动设置辅助线颜色: #%06X", (0xFFFFFF & color)));
+            post(this::invalidate); // 在主线程中重绘
+        }
+    }
+    
+    /**
+     * 设置辅助线颜色进度（0-1之间，0=绿色，1=红色）
+     */
+    public void setColorProgress(float progress) {
+        progress = Math.max(0f, Math.min(1f, progress));
+        int newColor = interpolateColor(COLOR_GREEN, COLOR_RED, progress);
+        setAssistLineColor(newColor);
+    }
+    
+    /**
+     * 重置辅助线颜色为绿色
+     */
+    public void resetToGreenColor() {
+        setAssistLineColor(COLOR_GREEN);
+    }
 } 

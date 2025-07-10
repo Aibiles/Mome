@@ -20,12 +20,16 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.mome.manager.CameraStatusManager;
 import com.example.mome.manager.VehicleControlManager;
+import com.example.mome.manager.VehicleStatusManager;
 import com.example.mome.view.Circle;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class InitActivity extends AppCompatActivity implements CameraStatusManager.CameraStatusListener, SensorEventListener {
+public class InitActivity extends AppCompatActivity implements 
+        CameraStatusManager.CameraStatusListener, 
+        SensorEventListener, 
+        VehicleStatusManager.VehicleStatusListener {
 
     private static final String TAG = "InitActivity";
     
@@ -63,6 +67,13 @@ public class InitActivity extends AppCompatActivity implements CameraStatusManag
     private ImageView ivCameraDirection;
     private TextView tvDirection;
     private TextView tvCameraPosition;
+    
+    // 车辆状态管理器
+    private VehicleStatusManager vehicleStatusManager;
+    
+    // 控制启动动画的标志
+    private volatile boolean isStartupAnimationRunning = false;
+    private Thread startupAnimationThread;
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -95,33 +106,13 @@ public class InitActivity extends AppCompatActivity implements CameraStatusManag
         
         // 注册摄像头状态监听器
         CameraStatusManager.getInstance().addListener(this);
+        
+        // 初始化并注册车辆状态监听器
+        vehicleStatusManager = VehicleStatusManager.getInstance();
+        vehicleStatusManager.addListener(this);
 
-        new Thread(()->{
-            while (currentBattery < 200) {
-                currentBattery++;
-                runOnUiThread(()->{
-                    tvRight.setText(String.valueOf(currentBattery));
-                    right.refreshUi(currentBattery);
-                });
-                try {
-                    Thread.sleep(3);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            while (currentBattery > 100) {
-                currentBattery--;
-                runOnUiThread(()->{
-                    tvRight.setText(String.valueOf(currentBattery));
-                    right.refreshUi(currentBattery);
-                });
-                try {
-                    Thread.sleep(5);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
+        // 启动电量动画（可被中断）
+        startBatteryStartupAnimation();
 
         // 初始化传感器
         initSensors();
@@ -132,6 +123,65 @@ public class InitActivity extends AppCompatActivity implements CameraStatusManag
         // 初始化仪表盘显示
         updateSpeedDisplay();
         updateBatteryDisplay();
+    }
+    
+    /**
+     * 启动电量动画（可被中断）
+     */
+    private void startBatteryStartupAnimation() {
+        isStartupAnimationRunning = true;
+        startupAnimationThread = new Thread(() -> {
+            // 第一阶段：从100增加到200
+            while (currentBattery < 200 && isStartupAnimationRunning) {
+                currentBattery++;
+                runOnUiThread(() -> {
+                    if (isStartupAnimationRunning) {
+                        tvRight.setText(String.valueOf(currentBattery));
+                        right.refreshUi(currentBattery);
+                    }
+                });
+                try {
+                    Thread.sleep(3);
+                } catch (InterruptedException e) {
+                    Log.d(TAG, "启动动画被中断");
+                    return;
+                }
+            }
+            
+            // 第二阶段：从200减少到100
+            while (currentBattery > 100 && isStartupAnimationRunning) {
+                currentBattery--;
+                runOnUiThread(() -> {
+                    if (isStartupAnimationRunning) {
+                        tvRight.setText(String.valueOf(currentBattery));
+                        right.refreshUi(currentBattery);
+                    }
+                });
+                try {
+                    Thread.sleep(5);
+                } catch (InterruptedException e) {
+                    Log.d(TAG, "启动动画被中断");
+                    return;
+                }
+            }
+            
+            isStartupAnimationRunning = false;
+            Log.d(TAG, "启动电量动画完成");
+        });
+        startupAnimationThread.start();
+    }
+    
+    /**
+     * 停止启动电量动画
+     */
+    private void stopBatteryStartupAnimation() {
+        if (isStartupAnimationRunning) {
+            isStartupAnimationRunning = false;
+            if (startupAnimationThread != null) {
+                startupAnimationThread.interrupt();
+            }
+            Log.d(TAG, "启动电量动画已停止");
+        }
     }
     
     /**
@@ -355,6 +405,53 @@ public class InitActivity extends AppCompatActivity implements CameraStatusManag
     }
     
     /**
+     * 车辆状态改变回调（踏板状态）
+     */
+    @Override
+    public void onVehicleStatusChanged(int speed, int battery, float pedalProgress, boolean isPedalPressed) {
+        runOnUiThread(() -> {
+            // 首次接收到踏板状态时，停止启动动画
+            if (isStartupAnimationRunning) {
+                stopBatteryStartupAnimation();
+            }
+            
+            // 当踏板被按下时，禁用传感器并使用踏板数据
+            if (isPedalPressed) {
+                // 禁用传感器监听以避免冲突
+                if (isSensorEnabled) {
+                    disableSensors();
+                }
+                
+                // 更新速度和电量为踏板控制的值
+                currentSpeed = speed;
+                currentBattery = battery;
+                
+                // 更新显示
+                updateSpeedDisplay();
+                updateBatteryDisplay();
+                
+                Log.d(TAG, String.format("踏板控制 - 速度: %d, 电量: %d, 进度: %.2f%%", 
+                        speed, battery, pedalProgress * 100));
+                
+            } else {
+                // 踏板松开时，如果电量和速度都回到默认值，重新启用传感器
+                if (speed == 0 && battery == 100) {
+                    Log.d(TAG, "踏板松开，重新启用传感器");
+                    enableSensors();
+                } else {
+                    // 仍在恢复过程中，继续使用踏板数据
+                    currentSpeed = speed;
+                    currentBattery = battery;
+                    updateSpeedDisplay();
+                    updateBatteryDisplay();
+                    
+                    Log.d(TAG, String.format("踏板恢复中 - 速度: %d, 电量: %d", speed, battery));
+                }
+            }
+        });
+    }
+    
+    /**
      * 更新摄像头状态显示
      */
     private void updateCameraStatusDisplay(VehicleControlManager.Direction direction, 
@@ -394,6 +491,9 @@ public class InitActivity extends AppCompatActivity implements CameraStatusManag
         // 禁用传感器监听
         disableSensors();
         
+        // 停止启动动画
+        stopBatteryStartupAnimation();
+        
         // 清理UI Handler
         if (uiHandler != null) {
             uiHandler.removeCallbacksAndMessages(null);
@@ -401,6 +501,11 @@ public class InitActivity extends AppCompatActivity implements CameraStatusManag
         
         // 移除摄像头状态监听器
         CameraStatusManager.getInstance().removeListener(this);
+        
+        // 移除车辆状态监听器
+        if (vehicleStatusManager != null) {
+            vehicleStatusManager.removeListener(this);
+        }
         
         Log.d(TAG, "InitActivity已清理");
     }

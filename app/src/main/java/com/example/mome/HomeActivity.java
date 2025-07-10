@@ -57,7 +57,7 @@ public class HomeActivity extends AppCompatActivity {
     private MediaPlayer player;
     private ImageView ivPlay;
 
-    private void initPlayer(String s) {
+    private void startPlayer(String s) {
         if (player != null) {
             player.pause();
             player.release();
@@ -91,29 +91,19 @@ public class HomeActivity extends AppCompatActivity {
             options.setLaunchDisplayId(displays[2].getDisplayId());
         }
         startActivity(intent, options.toBundle());
-        
 
-//        ivWea = findViewById(R.id.iv_wea);
-//        findViewById(R.id.cv_wea).setOnClickListener(v->{
-//            v.setSelected(!v.isSelected());
-//            ivWea.setBackground(getDrawable(v.isSelected() ? R.drawable.b : R.drawable.img_1));
-//        });
-//
-//        rlApp = findViewById(R.id.rl_app);
-//        tvApp = findViewById(R.id.tv_app);
-//        findViewById(R.id.cv_music).setOnClickListener(v->{
-//            Toast.makeText(this, "音视频App已打开", Toast.LENGTH_SHORT).show();
-//            tvApp.setText("音视频App");
-//            rlApp.setVisibility(View.VISIBLE);
-//        });
-//        findViewById(R.id.cv_car).setOnClickListener(v->{
-//            Toast.makeText(this, "车辆信息App已打开", Toast.LENGTH_SHORT).show();
-//            tvApp.setText("车辆信息App");
-//            rlApp.setVisibility(View.VISIBLE);
-//        });
-//        findViewById(R.id.back).setOnClickListener(v->rlApp.setVisibility(View.GONE));
-//
-//
+        intent = new Intent(this, MomeActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            options.setLaunchDisplayId(displays[1].getDisplayId());
+        }
+        startActivity(intent, options.toBundle());
+
+        initPlayer();
+        initView();
+    }
+
+    private void initPlayer() {
         list = new ArrayList<>();
         try {
             for (String s : getAssets().list("")) {
@@ -139,7 +129,7 @@ public class HomeActivity extends AppCompatActivity {
             index++;
             if (index == 4)
                 index = 0;
-            initPlayer(list.get(index));
+            startPlayer(list.get(index));
             player.start();
             ivPlay.setSelected(true);
         });
@@ -147,7 +137,7 @@ public class HomeActivity extends AppCompatActivity {
             index--;
             if (index == -1)
                 index = 3;
-            initPlayer(list.get(index));
+            startPlayer(list.get(index));
             player.start();
             ivPlay.setSelected(true);
         });
@@ -160,17 +150,15 @@ public class HomeActivity extends AppCompatActivity {
                 player.pause();
             }
         });
-        initPlayer(list.get(index));
+        startPlayer(list.get(index));
+    }
 
+    private void initView() {
         TextView tvDate = findViewById(R.id.date);
         tvDate.setText(LunarCalender.getDayLunar());
 
         chronometer = findViewById(R.id.chronometer);
         dateFormat = new SimpleDateFormat("hh:mm");
-        chronometer.setOnChronometerTickListener(v->{
-            chronometer.setText(dateFormat.format(new Date()));
-        });
-        chronometer.start();
 
         imageViews = new ImageView[] {
                 findViewById(R.id.one),
@@ -184,6 +172,19 @@ public class HomeActivity extends AppCompatActivity {
         appMap = new HashMap<>();
         sharedPreferences = getSharedPreferences("app", MODE_PRIVATE);
         edit = sharedPreferences.edit();
+
+
+        allView = new AllView(this);
+        repView = new RepView(this);
+
+        setupControlButtons();
+    }
+
+    private void setupControlButtons() {
+        chronometer.setOnChronometerTickListener(v->{
+            chronometer.setText(dateFormat.format(new Date()));
+        });
+        chronometer.start();
 
         for (id = 0; id < imageViews.length; id++) {
             int index = id;
@@ -221,7 +222,6 @@ public class HomeActivity extends AppCompatActivity {
             });
         }
 
-        allView = new AllView(this);
         allView.setClick(s -> {
             appMap.put(id, s);
             edit.putString(String.valueOf(id), s).apply();
@@ -229,9 +229,6 @@ public class HomeActivity extends AppCompatActivity {
             booleans[id] = true;
             allView.hide();
         });
-
-        repView = new RepView(this);
-
 
         repView.setClick(new RepView.Click() {
             @Override
@@ -282,6 +279,7 @@ public class HomeActivity extends AppCompatActivity {
             }
         });
     }
+
 
     @Override
     protected void onResume() {
