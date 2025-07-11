@@ -15,6 +15,8 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
 
+import com.example.mome.opencv.DistanceDetector;
+
 import java.util.List;
 
 /**
@@ -70,6 +72,12 @@ public class AssistLineOverlay extends View {
     private float manualTurnAngle = 0f;              // 手动设置的转向角度
     private int currentColor = COLOR_GREEN;          // 当前颜色
     
+    // 距离检测相关变量
+    private boolean isDistanceDetectionEnabled = false;    // 是否启用距离检测
+    private DistanceDetector.DetectionResult lastDetectionResult; // 最新检测结果
+    private Handler distanceHandler;                      // 距离检测处理器
+    private final long DISTANCE_UPDATE_INTERVAL = 100;   // 距离更新间隔（毫秒）
+    
     public AssistLineOverlay(Context context) {
         super(context);
         init(context);
@@ -87,6 +95,7 @@ public class AssistLineOverlay extends View {
     
     private void init(Context context) {
         colorHandler = new Handler(Looper.getMainLooper());
+        distanceHandler = new Handler(Looper.getMainLooper());
         setWillNotDraw(false); // 允许绘制
         
         // 初始化传感器
@@ -603,15 +612,18 @@ public class AssistLineOverlay extends View {
         float turnFactor = currentTurnAngle / MAX_TURN_ANGLE; // -1.0 到 1.0
         float tiltFactor = turnFactor * 0.3f; // 倾斜因子
         
-        // 梯形的底边（画面底部，较宽）
+        // 根据距离动态调整辅助线范围
+        float distanceFactor = calculateDistanceFactor();
+        
+        // 梯形的底边（画面底部，较宽）- 宽度保持不变
         float bottomY = height;
-        float baseBottomWidth = width * 0.4f;
+        float baseBottomWidth = width * 0.4f; // 宽度不受距离影响
         float bottomLeftX = centerX - baseBottomWidth;
         float bottomRightX = centerX + baseBottomWidth;
         
-        // 梯形的顶边（画面中上部，较窄）
-        float topY = height * 0.3f;
-        float baseTopWidth = width * 0.1f;
+        // 梯形的顶边（画面中上部，较窄）- 只调整高度
+        float topY = height * (0.3f + (1 - distanceFactor) * 0.3f); // 距离近时，顶边更靠下
+        float baseTopWidth = width * 0.1f; // 顶部宽度也保持不变
         float topLeftX = centerX - baseTopWidth + (width * tiltFactor);
         float topRightX = centerX + baseTopWidth + (width * tiltFactor);
         
@@ -620,30 +632,22 @@ public class AssistLineOverlay extends View {
         canvas.drawLine(bottomRightX, bottomY, topRightX, topY, paint); // 右边
         canvas.drawLine(topLeftX, topY, topRightX, topY, paint); // 顶边
         
-        // 绘制距离标记线（透视效果）
-        for (int i = 1; i <= 3; i++) {
-            float ratio = (float) i / 4;
-            float markY = bottomY - (bottomY - topY) * ratio;
-            
-            // 根据透视效果和转向调整标记线的宽度和偏移
-            float baseMarkWidth = (bottomRightX - bottomLeftX) * (1 - ratio * 0.74f);
-            float markTilt = tiltFactor * width * ratio;
-            
-            float markLeftX = centerX - baseMarkWidth / 2 + markTilt;
-            float markRightX = centerX + baseMarkWidth / 2 + markTilt;
-            
-            canvas.drawLine(markLeftX, markY, markRightX, markY, paint);
-        }
+        // 距离标记线已移除 - 只保留基本辅助线框架
         
         // 绘制中心线（根据倾斜调整）
         float centerTopX = centerX + (width * tiltFactor);
         canvas.drawLine(centerX, bottomY, centerTopX, topY, paint);
         
-        // 绘制倒车方向箭头
-        float arrowY = height * 0.4f;
+        // 绘制倒车方向箭头（位置只根据高度调整）
+        float arrowY = height * (0.4f + (1 - distanceFactor) * 0.2f); // 距离近时，箭头更靠下
         float arrowX = centerX + (width * tiltFactor * 0.83f); // 箭头位置跟随倾斜
         float arrowAngle = -90 + (turnFactor * 30); // 箭头角度跟随倾斜
         drawArrow(canvas, paint, arrowX, arrowY, arrowAngle);
+        
+        // 绘制距离信息（如果启用了距离检测）
+        if (isDistanceDetectionEnabled && lastDetectionResult != null) {
+            drawDistanceInfo(canvas, paint, width, height, centerX, tiltFactor);
+        }
         
         // 绘制车辆轮廓参考线
         drawVehicleOutline(canvas, paint, centerX, bottomY);
@@ -676,6 +680,132 @@ public class AssistLineOverlay extends View {
     }
     
     /**
+     * 根据距离计算辅助线高度调整因子
+     * @return 高度因子 (0.3f - 1.0f)，距离近时值小（辅助线高度较短），距离远时值大（辅助线高度较长）
+     */
+    private float calculateDistanceFactor() {
+        if (!isDistanceDetectionEnabled || lastDetectionResult == null) {
+            return 1.0f; // 默认最大范围
+        }
+        
+        double minDistance = lastDetectionResult.minDistance;
+        if (minDistance == Double.MAX_VALUE) {
+            return 1.0f; // 无障碍物，使用最大范围
+        }
+        
+        // 距离范围映射：0.5m - 3.0m
+        float minRange = 0.5f;  // 最小距离
+        float maxRange = 3.0f;  // 最大距离
+        float minFactor = 0.3f; // 最小范围因子
+        float maxFactor = 1.0f; // 最大范围因子
+        
+        // 限制距离范围
+        float distance = Math.max(minRange, Math.min(maxRange, (float) minDistance));
+        
+        // 计算范围因子（距离越小，因子越小）
+        float factor = minFactor + (maxFactor - minFactor) * (distance - minRange) / (maxRange - minRange);
+        
+        Log.d(TAG, String.format("距离: %.2fm, 高度因子: %.2f", minDistance, factor));
+        
+        return factor;
+    }
+
+    /**
+     * 绘制距离信息
+     */
+    private void drawDistanceInfo(Canvas canvas, Paint paint, int width, int height, float centerX, float tiltFactor) {
+        if (lastDetectionResult == null || lastDetectionResult.obstacles.isEmpty()) {
+            return;
+        }
+        
+        // 创建距离信息专用画笔
+        Paint distancePaint = new Paint(paint);
+        distancePaint.setTextSize(36);
+        distancePaint.setAntiAlias(true);
+        distancePaint.setStyle(Paint.Style.FILL);
+        
+        // 创建背景画笔
+        Paint backgroundPaint = new Paint();
+        backgroundPaint.setColor(Color.argb(180, 0, 0, 0));
+        backgroundPaint.setStyle(Paint.Style.FILL);
+        
+        // 显示最近障碍物距离
+        if (lastDetectionResult.minDistance != Double.MAX_VALUE) {
+            String distanceText = String.format("距离: %.1fm", lastDetectionResult.minDistance);
+            
+            // 根据距离设置颜色
+            int textColor = getDistanceColor(lastDetectionResult.minDistance);
+            distancePaint.setColor(textColor);
+            
+            // 计算文本位置
+            float textWidth = distancePaint.measureText(distanceText);
+            float textX = centerX - textWidth / 2;
+            float textY = height * 0.15f;
+            
+            // 绘制背景
+            canvas.drawRect(textX - 20, textY - 40, textX + textWidth + 20, textY + 10, backgroundPaint);
+            
+            // 绘制文本
+            canvas.drawText(distanceText, textX, textY, distancePaint);
+        }
+        
+        // 障碍物标记已移除 - 只显示距离数值
+    }
+    
+    /**
+     * 绘制危险等级指示器
+     */
+    private void drawDangerIndicator(Canvas canvas, int width, int height, DistanceDetector.DistanceZone zone) {
+        Paint indicatorPaint = new Paint();
+        indicatorPaint.setStyle(Paint.Style.FILL);
+        indicatorPaint.setAlpha(150);
+        
+        // 根据危险等级设置颜色
+        switch (zone) {
+            case CRITICAL:
+                indicatorPaint.setColor(Color.RED);
+                // 闪烁效果
+                long currentTime = System.currentTimeMillis();
+                if ((currentTime / 200) % 2 == 0) {
+                    indicatorPaint.setAlpha(255);
+                }
+                break;
+            case DANGER:
+                indicatorPaint.setColor(Color.RED);
+                break;
+            case CAUTION:
+                indicatorPaint.setColor(Color.YELLOW);
+                break;
+            case SAFE:
+            default:
+                indicatorPaint.setColor(Color.GREEN);
+                break;
+        }
+        
+        // 绘制指示器条
+        float indicatorHeight = height * 0.02f;
+        float indicatorY = height * 0.05f;
+        canvas.drawRect(0, indicatorY, width, indicatorY + indicatorHeight, indicatorPaint);
+    }
+    
+    // 绘制障碍物标记的方法已移除 - 简化显示，只保留距离数值
+    
+    /**
+     * 根据距离获取颜色
+     */
+    private int getDistanceColor(double distance) {
+        if (distance < 0.5) {
+            return Color.RED;
+        } else if (distance < 1.0) {
+            return Color.rgb(255, 165, 0); // 橙色
+        } else if (distance < 2.0) {
+            return Color.YELLOW;
+        } else {
+            return Color.GREEN;
+        }
+    }
+    
+    /**
      * 绘制车辆轮廓参考线
      */
     private void drawVehicleOutline(Canvas canvas, Paint paint, float centerX, float bottomY) {
@@ -702,12 +832,58 @@ public class AssistLineOverlay extends View {
     }
     
     /**
+     * 启用距离检测
+     */
+    public void enableDistanceDetection() {
+        isDistanceDetectionEnabled = true;
+        Log.d(TAG, "距离检测已启用");
+    }
+    
+    /**
+     * 禁用距离检测
+     */
+    public void disableDistanceDetection() {
+        isDistanceDetectionEnabled = false;
+        lastDetectionResult = null;
+        Log.d(TAG, "距离检测已禁用");
+    }
+    
+    /**
+     * 更新距离检测结果
+     */
+    public void updateDistanceDetectionResult(DistanceDetector.DetectionResult result) {
+        if (isDistanceDetectionEnabled) {
+            lastDetectionResult = result;
+            // 在主线程中重绘
+            post(this::invalidate);
+        }
+    }
+    
+    /**
+     * 获取当前距离检测状态
+     */
+    public boolean isDistanceDetectionEnabled() {
+        return isDistanceDetectionEnabled;
+    }
+    
+    /**
+     * 获取最后的检测结果
+     */
+    public DistanceDetector.DetectionResult getLastDetectionResult() {
+        return lastDetectionResult;
+    }
+    
+    /**
      * 清理资源
      */
     public void cleanup() {
         disableSensors();
+        disableDistanceDetection();
         if (colorHandler != null) {
             colorHandler.removeCallbacksAndMessages(null);
+        }
+        if (distanceHandler != null) {
+            distanceHandler.removeCallbacksAndMessages(null);
         }
         Log.d(TAG, "辅助线覆盖层已清理");
     }

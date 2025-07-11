@@ -5,6 +5,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.CAMERA" /> <!-- Android 13+ 需要额外权限 -->
+    <uses-permission android:name="android.permission.VIBRATE" /> <!-- 振动权限 -->
     <uses-feature android:name="android.hardware.camera.any" />
 
     <!--允许获取粗略位置，若用GPS实现定位小蓝点功能则必选-->

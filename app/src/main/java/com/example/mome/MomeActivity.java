@@ -32,8 +32,10 @@ import com.example.mome.handle.GestureCallback;
 import com.example.mome.handle.GestureHandler;
 import com.example.mome.manager.CameraConnectionManager;
 import com.example.mome.manager.CameraStatusManager;
+import com.example.mome.manager.DistanceWarningManager;
 import com.example.mome.manager.VehicleControlManager;
 import com.example.mome.manager.VehicleStatusManager;
+import com.example.mome.opencv.DistanceDetector;
 import com.example.mome.view.AssistLineOverlay;
 import com.github.niqdev.mjpeg.MjpegView;
 
@@ -55,7 +57,7 @@ public class MomeActivity extends AppCompatActivity implements
     private View frontStatus, rearStatus, leftStatus, rightStatus;
     
     // 控制按钮
-    private ImageButton btnForward, btnBackward, btnLeft, btnRight, btnStop;
+    private ImageButton btnForward, btnBackward, btnLeft, btnRight, btnDistanceDetection;
     
     // 管理器
     private VehicleControlManager vehicleControlManager;
@@ -64,6 +66,15 @@ public class MomeActivity extends AppCompatActivity implements
     
     // 辅助线覆盖层
     private AssistLineOverlay assistLineOverlay;
+    
+    // 距离检测器
+    private DistanceDetector distanceDetector;
+    
+    // 距离警告管理器
+//    private DistanceWarningManager distanceWarningManager;
+    
+    // 距离检测控制状态
+    private boolean isDistanceDetectionGlobalEnabled = false; // 默认关闭
     
     // 全屏状态
     private boolean isFullscreenMode = false;
@@ -172,6 +183,7 @@ public class MomeActivity extends AppCompatActivity implements
         btnBackward = findViewById(R.id.btnBackward);
         btnLeft = findViewById(R.id.btnLeft);
         btnRight = findViewById(R.id.btnRight);
+        btnDistanceDetection = findViewById(R.id.btnDistanceDetection);
         ivPedal = findViewById(R.id.iv_pedal);
         ivSwipeArrow = findViewById(R.id.iv_swipe_arrow);
         flSwipeArrow = findViewById(R.id.fl_swipe_arrow);
@@ -185,6 +197,9 @@ public class MomeActivity extends AppCompatActivity implements
         
         // 设置按钮监听器
         setupControlButtons();
+        
+        // 初始化距离检测按钮UI状态
+        updateDistanceDetectionButtonUI();
     }
     
     /**
@@ -214,6 +229,11 @@ public class MomeActivity extends AppCompatActivity implements
         btnRight.setOnClickListener(v -> {
             vehicleControlManager.turnRight();
             startForwardTurnAssistLine();
+        });
+        
+        // 距离检测控制按钮
+        btnDistanceDetection.setOnClickListener(v -> {
+            toggleDistanceDetection();
         });
         
         // 踏板长按监听器
@@ -491,6 +511,12 @@ public class MomeActivity extends AppCompatActivity implements
         
         // 初始化辅助线覆盖层
         assistLineOverlay = findViewById(R.id.assistLineOverlay);
+        
+        // 初始化距离检测器
+        distanceDetector = new DistanceDetector();
+        
+        // 初始化距离警告管理器
+//        distanceWarningManager = new DistanceWarningManager(this);
     }
     
     @Override
@@ -564,6 +590,16 @@ public class MomeActivity extends AppCompatActivity implements
             cameraConnectionManager.cleanup();
         }
         
+        // 清理距离检测器
+        if (distanceDetector != null) {
+            distanceDetector.release();
+        }
+        
+        // 清理距离警告管理器
+//        if (distanceWarningManager != null) {
+//            distanceWarningManager.release();
+//        }
+        
         // 停止所有MjpegView播放
         if (frontCameraView != null) frontCameraView.stopPlayback();
         if (rearCameraView != null) rearCameraView.stopPlayback();
@@ -586,6 +622,23 @@ public class MomeActivity extends AppCompatActivity implements
             
             // 更新全局摄像头状态管理器
             CameraStatusManager.getInstance().updateCameraStatus(direction, cameraPosition);
+            
+            // 当切换到倒车摄像头时，根据全局开关决定是否启用距离检测
+            if (cameraPosition == VehicleControlManager.CameraPosition.REAR && isDistanceDetectionGlobalEnabled) {
+                if (assistLineOverlay != null) {
+                    assistLineOverlay.enableDistanceDetection();
+                    Log.d(TAG, "倒车摄像头激活，距离检测已开启");
+                }
+            } else {
+                if (assistLineOverlay != null) {
+                    assistLineOverlay.disableDistanceDetection();
+                    if (cameraPosition == VehicleControlManager.CameraPosition.REAR && !isDistanceDetectionGlobalEnabled) {
+                        Log.d(TAG, "倒车摄像头激活，但距离检测功能已关闭");
+                    } else {
+                        Log.d(TAG, "非倒车摄像头，禁用距离检测");
+                    }
+                }
+            }
             
             Log.d(TAG, "方向改变: " + direction + ", 摄像头: " + cameraPosition);
         });
@@ -663,6 +716,36 @@ public class MomeActivity extends AppCompatActivity implements
     public void onFrameCaptured(int cameraIndex, Bitmap bitmap) {
         if (cameraIndex == 0 && isFullscreenMode) {
 //            ncnn.detectSeg(bitmap);
+        }
+        
+        // 当捕获到倒车摄像头帧时，进行距离检测（需要全局开关开启）
+        if (cameraIndex == Camera360Config.CAMERA_BOTTOM && 
+            vehicleControlManager.getCurrentCamera() == VehicleControlManager.CameraPosition.REAR &&
+            isDistanceDetectionGlobalEnabled) {
+            
+            if (distanceDetector != null && assistLineOverlay != null && 
+                assistLineOverlay.isDistanceDetectionEnabled()) {
+                
+                // 在后台线程中进行距离检测
+                new Thread(() -> {
+                    try {
+                        DistanceDetector.DetectionResult result = distanceDetector.detectDistance(bitmap);
+                        
+                        // 在主线程中更新结果
+                        runOnUiThread(() -> {
+                            assistLineOverlay.updateDistanceDetectionResult(result);
+                            
+                            // 如果距离过近，触发警告
+//                            if (result.zone == DistanceDetector.DistanceZone.CRITICAL ||
+//                                result.zone == DistanceDetector.DistanceZone.DANGER) {
+//                                handleDistanceWarning(result);
+//                            }
+                        });
+                    } catch (Exception e) {
+                        Log.e(TAG, "距离检测失败", e);
+                    }
+                }).start();
+            }
         }
     }
 
@@ -947,5 +1030,89 @@ public class MomeActivity extends AppCompatActivity implements
                     }
                 })
                 .start();
+    }
+    
+    /**
+     * 切换距离检测功能
+     */
+    private void toggleDistanceDetection() {
+        isDistanceDetectionGlobalEnabled = !isDistanceDetectionGlobalEnabled;
+        
+        // 更新按钮外观
+        updateDistanceDetectionButtonUI();
+        
+        // 如果当前在倒车摄像头，立即应用新的设置
+        if (vehicleControlManager.getCurrentCamera() == VehicleControlManager.CameraPosition.REAR) {
+            if (isDistanceDetectionGlobalEnabled) {
+                assistLineOverlay.enableDistanceDetection();
+                Log.d(TAG, "距离检测已开启");
+                Toast.makeText(this, "距离检测已开启", Toast.LENGTH_SHORT).show();
+            } else {
+                assistLineOverlay.disableDistanceDetection();
+                Log.d(TAG, "距离检测已关闭");
+                Toast.makeText(this, "距离检测已关闭", Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            String status = isDistanceDetectionGlobalEnabled ? "开启" : "关闭";
+            Toast.makeText(this, "距离检测已" + status + "（倒车时生效）", Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "距离检测状态已设置为: " + status);
+        }
+    }
+    
+    /**
+     * 更新距离检测按钮UI
+     */
+    private void updateDistanceDetectionButtonUI() {
+        if (btnDistanceDetection != null) {
+            if (isDistanceDetectionGlobalEnabled) {
+                // 开启状态：不透明，绿色背景
+                btnDistanceDetection.setAlpha(1.0f);
+                btnDistanceDetection.setBackgroundResource(R.drawable.control_button_selected_bg);
+            } else {
+                // 关闭状态：半透明，默认背景
+                btnDistanceDetection.setAlpha(0.6f);
+                btnDistanceDetection.setBackgroundResource(R.drawable.control_button_bg);
+            }
+        }
+    }
+    
+    /**
+     * 获取距离检测全局开关状态
+     */
+    public boolean isDistanceDetectionGlobalEnabled() {
+        return isDistanceDetectionGlobalEnabled;
+    }
+    
+    /**
+     * 处理距离警告
+     */
+    private void handleDistanceWarning(DistanceDetector.DetectionResult result) {
+        if (result == null) return;
+        
+        String warningMessage = "";
+        switch (result.zone) {
+            case CRITICAL:
+                warningMessage = String.format("紧急警告！障碍物距离仅%.1f米", result.minDistance);
+                break;
+            case DANGER:
+                warningMessage = String.format("危险！障碍物距离%.1f米", result.minDistance);
+                break;
+            case CAUTION:
+                warningMessage = String.format("注意！障碍物距离%.1f米", result.minDistance);
+                break;
+            default:
+                return; // 安全距离不需要警告
+        }
+        
+        // 显示Toast警告
+        Toast.makeText(this, warningMessage, Toast.LENGTH_SHORT).show();
+        
+        // 记录警告日志
+        Log.w(TAG, "距离警告: " + warningMessage);
+        
+        // 触发声音和振动警告
+//        if (distanceWarningManager != null) {
+//            distanceWarningManager.triggerDistanceWarning(result.zone, result.minDistance);
+//        }
     }
 }

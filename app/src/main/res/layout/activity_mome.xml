@@ -193,42 +193,15 @@
             android:scaleType="centerInside"
             android:src="@drawable/ic_arrow_right" />
 
-        <!--                <LinearLayout-->
-        <!--                    android:layout_width="wrap_content"-->
-        <!--                    android:layout_height="wrap_content"-->
-        <!--                    android:orientation="horizontal">-->
-
-        <!--                    &lt;!&ndash; 左转按钮 &ndash;&gt;-->
-        <!--                    <ImageButton-->
-        <!--                        android:id="@+id/btnLeft"-->
-        <!--                        android:layout_width="30dp"-->
-        <!--                        android:layout_height="30dp"-->
-        <!--                        android:layout_marginEnd="8dp"-->
-        <!--                        android:background="@drawable/control_button_bg"-->
-        <!--                        android:scaleType="centerInside"-->
-        <!--                        android:src="@drawable/ic_arrow_left" />-->
-
-        <!--                    &lt;!&ndash; 停止按钮 &ndash;&gt;-->
-        <!--                    <ImageButton-->
-        <!--                        android:id="@+id/btnStop"-->
-        <!--                        android:layout_width="30dp"-->
-        <!--                        android:layout_height="30dp"-->
-        <!--                        android:background="@drawable/stop_button_bg"-->
-        <!--                        android:scaleType="centerInside"-->
-        <!--                        android:src="@drawable/ic_stop" />-->
-
-        <!--                    &lt;!&ndash; 右转按钮 &ndash;&gt;-->
-        <!--                    <ImageButton-->
-        <!--                        android:id="@+id/btnRight"-->
-        <!--                        android:layout_width="30dp"-->
-        <!--                        android:layout_height="30dp"-->
-        <!--                        android:layout_marginStart="8dp"-->
-        <!--                        android:background="@drawable/control_button_bg"-->
-        <!--                        android:scaleType="centerInside"-->
-        <!--                        android:src="@drawable/ic_arrow_right" />-->
-
-        <!--                </LinearLayout>-->
-
+        <!-- 距离检测控制按钮 -->
+        <ImageButton
+            android:id="@+id/btnDistanceDetection"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/control_button_bg"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_distance_detection" />
 
     </LinearLayout>
 
