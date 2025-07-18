@@ -633,6 +633,22 @@ public class AssistLineOverlay extends View {
         canvas.drawLine(topLeftX, topY, topRightX, topY, paint); // 顶边
         
         // 距离标记线已移除 - 只保留基本辅助线框架
+        // 绘制距离标记线（透视效果）- 只调整数量，宽度保持透视比例
+        int markCount = Math.max(1, (int) (3 * distanceFactor)); // 距离近时减少标记线数量
+        for (int i = 1; i <= markCount; i++) {
+            float ratio = (float) i / (markCount + 1);
+            float markY = bottomY - (bottomY - topY) * ratio;
+            
+            // 根据透视效果和转向调整标记线的宽度和偏移（宽度基于固定的梯形比例）
+            float baseMarkWidth = (bottomRightX - bottomLeftX) * (1 - ratio * 0.74f);
+            float markTilt = tiltFactor * width * ratio;
+            
+            float markLeftX = centerX - baseMarkWidth / 2 + markTilt;
+            float markRightX = centerX + baseMarkWidth / 2 + markTilt;
+            
+            canvas.drawLine(markLeftX, markY, markRightX, markY, paint);
+        }
+
         
         // 绘制中心线（根据倾斜调整）
         float centerTopX = centerX + (width * tiltFactor);
@@ -749,8 +765,12 @@ public class AssistLineOverlay extends View {
             canvas.drawText(distanceText, textX, textY, distancePaint);
         }
         
+
         // 障碍物标记已移除 - 只显示距离数值
+        // 绘制障碍物标记
+        drawObstacleMarkers(canvas, distancePaint, width, height, centerX, tiltFactor);
     }
+
     
     /**
      * 绘制危险等级指示器
@@ -788,8 +808,41 @@ public class AssistLineOverlay extends View {
         canvas.drawRect(0, indicatorY, width, indicatorY + indicatorHeight, indicatorPaint);
     }
     
-    // 绘制障碍物标记的方法已移除 - 简化显示，只保留距离数值
-    
+        /**
+     * 绘制障碍物标记
+     */
+    private void drawObstacleMarkers(Canvas canvas, Paint paint, int width, int height, float centerX, float tiltFactor) {
+        if (lastDetectionResult == null || lastDetectionResult.obstacles.isEmpty()) {
+            return;
+        }
+        
+        Paint markerPaint = new Paint(paint);
+        markerPaint.setStrokeWidth(4);
+        markerPaint.setStyle(Paint.Style.STROKE);
+        
+        for (DistanceDetector.ObstacleInfo obstacle : lastDetectionResult.obstacles) {
+            // 将障碍物位置映射到辅助线坐标系
+            float markerX = (float) (obstacle.position.x * width / 640); // 假设图像宽度为640
+            float markerY = (float) (obstacle.position.y * height / 480); // 假设图像高度为480
+            
+            // 根据距离设置颜色
+            int markerColor = getDistanceColor(obstacle.distance);
+            markerPaint.setColor(markerColor);
+            
+            // 绘制障碍物标记（圆形）
+            canvas.drawCircle(markerX, markerY, 15, markerPaint);
+            
+            // 绘制距离文本
+            Paint textPaint = new Paint();
+            textPaint.setColor(markerColor);
+            textPaint.setTextSize(24);
+            textPaint.setAntiAlias(true);
+            
+            String distanceText = String.format("%.1fm", obstacle.distance);
+            canvas.drawText(distanceText, markerX - 20, markerY - 20, textPaint);
+        }
+    }
+
     /**
      * 根据距离获取颜色
      */

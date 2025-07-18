@@ -222,7 +222,7 @@
         android:scaleType="fitXY"
         app:layout_constraintBottom_toTopOf="@+id/guideline10"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="@+id/centerDivider"
+        app:layout_constraintStart_toEndOf="@+id/centerDivider"
         app:layout_constraintTop_toTopOf="parent" />
 
     <!-- 左侧摄像头 -->
@@ -258,7 +258,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toStartOf="@+id/centerDivider"
+        app:layout_constraintStart_toEndOf="@+id/centerDivider"
         app:layout_constraintTop_toTopOf="@+id/guideline12"
         app:layout_constraintVertical_bias="0.0" />
 
@@ -366,7 +366,7 @@
         android:layout_height="0dp"
         app:layout_constraintBottom_toTopOf="@+id/bottomTrapezoidView"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.496"
+        app:layout_constraintHorizontal_bias="0.491"
         app:layout_constraintStart_toEndOf="@+id/centerDivider"
         app:layout_constraintTop_toTopOf="@+id/guideline10"
         app:layout_constraintVertical_bias="0.0"

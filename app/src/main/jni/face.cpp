@@ -3147,6 +3147,59 @@ int Face::draw(cv::Mat &rgb, const std::vector<Object> &objects) {
     for (int i = 0; i < objects.size(); ++i) {
         float left = caculate(objects[i].left_eyes);
         float right = caculate(objects[i].right_eyes);
+//        objects[i].trans_image.copyTo(rgb(cv::Rect(0,0,192,192)));
+//
+//        for(int j = 0; j < 468; j++)
+//            cv::circle(rgb, objects[i].skeleton[j], 2, cv::Scalar(0,255,255),-1);
+//        for (int j = 0; j < 8; j++)
+//        {
+//            cv::line(rgb, objects[i].left_eyes[j], objects[i].left_eyes[j+1], cv::Scalar(0, 255, 0), 2);
+//            cv::line(rgb, objects[i].right_eyes[j], objects[i].right_eyes[j+1], cv::Scalar(0, 255, 0), 2);
+//        }
+//        for (int j = 9; j < 15; j++)
+//        {
+//            cv::line(rgb, objects[i].left_eyes[j], objects[i].left_eyes[j+1], cv::Scalar(0, 255, 0), 2);
+//            cv::line(rgb, objects[i].right_eyes[j], objects[i].right_eyes[j+1], cv::Scalar(0, 255, 0), 2);
+//        }
+//        for(int j = 0; j < 40; j++)
+//        {
+//            cv::Point2f p1 = objects[i].skeleton[FACEMESH_LIPS[j][0]];
+//            cv::Point2f p2 = objects[i].skeleton[FACEMESH_LIPS[j][1]];
+//            cv::line(rgb, p1, p2, cv::Scalar(255,0,0),2);
+//        }
+//
+//        for(int j = 0; j < 16; j++)
+//        {
+//            cv::Point2f p1 = objects[i].skeleton[FACEMESH_LEFT_EYE[j][0]];
+//            cv::Point2f p2 = objects[i].skeleton[FACEMESH_LEFT_EYE[j][1]];
+//            cv::line(rgb, p1, p2, cv::Scalar(255,0,0),2);
+//        }
+//        for(int j = 0; j < 16; j++)
+//        {
+//            cv::Point2f p1 = objects[i].skeleton[FACEMESH_RIGHT_EYE[j][0]];
+//            cv::Point2f p2 = objects[i].skeleton[FACEMESH_RIGHT_EYE[j][1]];
+//            cv::line(rgb, p1, p2, cv::Scalar(255,0,0),2);
+//        }
+//
+//        for(int j = 0; j < 8; j++)
+//        {
+//            cv::Point2f p1 = objects[i].skeleton[FACEMESH_LEFT_EYEBROW[j][0]];
+//            cv::Point2f p2 = objects[i].skeleton[FACEMESH_LEFT_EYEBROW[j][1]];
+//            cv::line(rgb, p1, p2, cv::Scalar(255,0,0),2);
+//        }
+//        for(int j = 0; j < 8; j++)
+//        {
+//            cv::Point2f p1 = objects[i].skeleton[FACEMESH_RIGHT_EYEBROW[j][0]];
+//            cv::Point2f p2 = objects[i].skeleton[FACEMESH_RIGHT_EYEBROW[j][1]];
+//            cv::line(rgb, p1, p2, cv::Scalar(255,0,0),2);
+//        }
+//
+//        for (int j = 0; j < 2556; j++)
+//        {
+//            cv::Point2f p1 = objects[i].skeleton[FACEMESH_TESSELATION[j][0]];
+//            cv::Point2f p2 = objects[i].skeleton[FACEMESH_TESSELATION[j][1]];
+//            cv::line(rgb, p1, p2, cv::Scalar(165, 190, 190), 1);
+//        }
 
         __android_log_print(ANDROID_LOG_WARN, "BlazeFaceNcnn", "%f %f", left, right);
 

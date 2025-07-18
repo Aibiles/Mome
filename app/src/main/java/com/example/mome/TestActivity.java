@@ -1,6 +1,8 @@
 package com.example.mome;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.SurfaceView;
@@ -19,7 +21,9 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.example.mome.config.Camera360Config;
+import com.example.mome.opencv.DistanceDetector;
 import com.example.mome.opencv.TrapezoidTransform;
+import com.example.mome.view.AssistLineOverlay;
 import com.github.niqdev.mjpeg.DisplayMode;
 import com.github.niqdev.mjpeg.Mjpeg;
 import com.github.niqdev.mjpeg.MjpegView;
@@ -49,6 +53,10 @@ public class TestActivity extends AppCompatActivity {
     private FrameLayout frameLayout;
 
     private BlazeFaceNcnn ncnn = new BlazeFaceNcnn();
+    private ImageView ivTest;
+
+    private AssistLineOverlay assistLineOverlay;
+    private DistanceDetector distanceDetector;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,17 +97,47 @@ public class TestActivity extends AppCompatActivity {
     }
 
     private void initViews() {
-        mjpegViewTop = findViewById(R.id.mjpegViewTop);
-        mjpegViewBottom = findViewById(R.id.mjpegViewBottom);
-        mjpegViewLeft = findViewById(R.id.mjpegViewLeft);
-        mjpegViewRight = findViewById(R.id.mjpegViewRight);
+//        mjpegViewTop = findViewById(R.id.mjpegViewTop);
+//        mjpegViewBottom = findViewById(R.id.mjpegViewBottom);
+//        mjpegViewLeft = findViewById(R.id.mjpegViewLeft);
+//        mjpegViewRight = findViewById(R.id.mjpegViewRight);
+//
+//        frameLayout = findViewById(R.id.camera_frame);
+//
+//        imageViewTop = findViewById(R.id.imageViewTop);
+//        imageViewBottom = findViewById(R.id.imageViewBottom);
+//        imageViewLeft = findViewById(R.id.imageViewLeft);
+//        imageViewRight = findViewById(R.id.imageViewRight);
 
-        frameLayout = findViewById(R.id.camera_frame);
+        ivTest = findViewById(R.id.iv_test);
 
-        imageViewTop = findViewById(R.id.imageViewTop);
-        imageViewBottom = findViewById(R.id.imageViewBottom);
-        imageViewLeft = findViewById(R.id.imageViewLeft);
-        imageViewRight = findViewById(R.id.imageViewRight);
+//        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.test);
+
+//        // 初始化辅助线覆盖层
+//        assistLineOverlay = findViewById(R.id.assistLineOverlay);
+//        assistLineOverlay.startDrawing(AssistLineOverlay.LineType.REVERSE);
+//        assistLineOverlay.enableDistanceDetection();
+//
+//        // 初始化距离检测器
+//        distanceDetector = distanceDetector = new DistanceDetector();
+//
+////        DistanceDetector.DetectionResult result = distanceDetector.detectDistance(bitmap);
+//
+//        result.minDistance = 3.4;
+//
+//        assistLineOverlay.updateDistanceDetectionResult(result);
+
+//        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.test);
+//
+//        applyTrapezoidTransformAndDisplay(bitmap, Camera360Config.CAMERA_TOP, ivTest);
+
+
+
+//                                    runOnUiThread(() -> {
+//                                        if (imageViewTop != null) {
+//                                            imageViewTop.setImageBitmap(latestTopFrame);
+//                                        }
+//                                    });
 
     }
 
@@ -286,10 +324,10 @@ public class TestActivity extends AppCompatActivity {
         }
 
         // 加载摄像头流
-        loadIpCamTop();
-        loadIpCamBottom();
-        loadIpCamLeft();
-        loadIpCamRight();
+//        loadIpCamTop();
+//        loadIpCamBottom();
+//        loadIpCamLeft();
+//        loadIpCamRight();
     }
 
     @Override
@@ -301,6 +339,10 @@ public class TestActivity extends AppCompatActivity {
         if (mjpegViewBottom != null) mjpegViewBottom.stopPlayback();
         if (mjpegViewLeft != null) mjpegViewLeft.stopPlayback();
         if (mjpegViewRight != null) mjpegViewRight.stopPlayback();
+
+        if (assistLineOverlay != null) {
+            assistLineOverlay.clearLines();
+        }
     }
 
     @Override
@@ -320,5 +362,12 @@ public class TestActivity extends AppCompatActivity {
         if (latestRightFrame != null && !latestRightFrame.isRecycled()) {
             latestRightFrame.recycle();
         }
+        if (distanceDetector != null) {
+            distanceDetector.release();
+        }
+        if (assistLineOverlay != null) {
+            assistLineOverlay.cleanup();
+        }
+
     }
 }

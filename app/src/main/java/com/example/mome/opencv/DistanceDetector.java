@@ -25,7 +25,7 @@ public class DistanceDetector {
     
     // 检测参数
     private static final double MIN_CONTOUR_AREA = 500; // 最小轮廓面积
-    private static final double MAX_DISTANCE = 10.0; // 最大检测距离（米）
+    private static final double MAX_DISTANCE = 8.0; // 最大检测距离（米）
     private static final double MIN_DISTANCE = 0.5; // 最小检测距离（米）
 
     // 距离分区（用于不同颜色显示）
@@ -84,13 +84,52 @@ public class DistanceDetector {
         blurMat = new Mat();
         edgesMat = new Mat();
         hierarchyMat = new Mat();
-        
+
         Log.d(TAG, "DistanceDetector 初始化完成");
     }
     
     /**
      * 检测障碍物并计算距离
      */
+    public Bitmap detectDistance(Bitmap bitmap, int a) {
+        DetectionResult result = new DetectionResult();
+
+        if (bitmap == null || bitmap.isRecycled()) {
+            Log.e(TAG, "输入bitmap无效");
+            return bitmap;
+        }
+
+        try {
+            // 转换为OpenCV Mat
+            Mat inputMat = new Mat();
+            Utils.bitmapToMat(bitmap, inputMat);
+
+            // 预处理图像
+            preprocessImage(inputMat);
+
+            // 检测障碍物
+            List<MatOfPoint> contours = detectObstacles();
+
+            // 计算距离
+            result.obstacles = calculateDistances(contours, inputMat.size());
+
+            // 确定最小距离和危险等级
+            updateDistanceZone(result);
+
+            // 创建处理后的图像用于显示
+            result.processedImage = createProcessedImage(inputMat, result.obstacles);
+
+            Utils.matToBitmap(result.processedImage, bitmap);
+
+            inputMat.release();
+
+        } catch (Exception e) {
+            Log.e(TAG, "距离检测失败", e);
+        }
+
+        return bitmap;
+    }
+
     public DetectionResult detectDistance(Bitmap bitmap) {
         DetectionResult result = new DetectionResult();
         
@@ -112,10 +151,10 @@ public class DistanceDetector {
             
             // 计算距离
             result.obstacles = calculateDistances(contours, inputMat.size());
-            
+
             // 确定最小距离和危险等级
             updateDistanceZone(result);
-            
+
             // 创建处理后的图像用于显示
             result.processedImage = createProcessedImage(inputMat, result.obstacles);
             
@@ -135,11 +174,8 @@ public class DistanceDetector {
         // 转换为灰度图
         Imgproc.cvtColor(inputMat, grayMat, Imgproc.COLOR_BGR2GRAY);
         
-        // 高斯模糊减少噪声
-        Imgproc.GaussianBlur(grayMat, blurMat, new Size(5, 5), 0);
-        
         // 边缘检测
-        Imgproc.Canny(blurMat, edgesMat, 50, 150);
+        Imgproc.Canny(grayMat, edgesMat, 30, 50);
         
         // 形态学操作连接断开的边缘
         Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3, 3));
@@ -152,20 +188,29 @@ public class DistanceDetector {
      */
     private List<MatOfPoint> detectObstacles() {
         List<MatOfPoint> contours = new ArrayList<>();
-        
-        // 查找轮廓
         Imgproc.findContours(edgesMat, contours, hierarchyMat, 
                            Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
-        
-        // 过滤轮廓
+    
+        int imgHeight = edgesMat.rows();
+        int halfHeight = imgHeight / 2;
+    
         List<MatOfPoint> filteredContours = new ArrayList<>();
         for (MatOfPoint contour : contours) {
-            double area = Imgproc.contourArea(contour);
-            if (area > MIN_CONTOUR_AREA) {
-                filteredContours.add(contour);
+            // 判断该轮廓是否有点在下半部分
+            boolean hasPointInLowerHalf = false;
+            for (Point p : contour.toArray()) {
+                if (p.y >= halfHeight) {
+                    hasPointInLowerHalf = true;
+                    break;
+                }
+            }
+            if (hasPointInLowerHalf) {
+                double area = Imgproc.contourArea(contour);
+                if (area > MIN_CONTOUR_AREA) {
+                    filteredContours.add(contour);
+                }
             }
         }
-        
         return filteredContours;
     }
     
@@ -283,13 +328,13 @@ public class DistanceDetector {
             
             // 绘制边界框
             Imgproc.rectangle(outputMat, obstacle.boundingBox.tl(), 
-                            obstacle.boundingBox.br(), color, 2);
+                            obstacle.boundingBox.br(), color, 20);
             
             // 绘制距离文本
             String distanceText = String.format("%.1fm", obstacle.distance);
             Point textPoint = new Point(obstacle.boundingBox.x, obstacle.boundingBox.y - 10);
             Imgproc.putText(outputMat, distanceText, textPoint, 
-                          Imgproc.FONT_HERSHEY_SIMPLEX, 0.6, color, 2);
+                          Imgproc.FONT_HERSHEY_SIMPLEX, 5, color, 10);
         }
         
         return outputMat;
