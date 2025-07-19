@@ -158,4 +158,10 @@ public class DetectActivity extends AppCompatActivity {
         super.onPause();
         ncnn.closeCamera();
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        ncnn.release();
+    }
 }

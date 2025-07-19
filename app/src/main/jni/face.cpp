@@ -3204,10 +3204,10 @@ int Face::draw(cv::Mat &rgb, const std::vector<Object> &objects) {
         __android_log_print(ANDROID_LOG_WARN, "BlazeFaceNcnn", "%f %f", left, right);
 
         if (left < 0.27 || right < 0.27) {
-            cv::line(rgb, objects[i].pos[0], objects[i].pos[1], cv::Scalar (0,0,255),5);
-            cv::line(rgb, objects[i].pos[1], objects[i].pos[2], cv::Scalar(0,0,255), 5);
-            cv::line(rgb, objects[i].pos[2], objects[i].pos[3], cv::Scalar(0,0,255), 5);
-            cv::line(rgb, objects[i].pos[3], objects[i].pos[0], cv::Scalar(0,0,255), 5);
+            cv::line(rgb, objects[i].pos[0], objects[i].pos[1], cv::Scalar(255,0,0),5);
+            cv::line(rgb, objects[i].pos[1], objects[i].pos[2], cv::Scalar(255,0,0), 5);
+            cv::line(rgb, objects[i].pos[2], objects[i].pos[3], cv::Scalar(255,0,0), 5);
+            cv::line(rgb, objects[i].pos[3], objects[i].pos[0], cv::Scalar(255,0,0), 5);
             isWarn = 1;
         } else {
             cv::line(rgb, objects[i].pos[0], objects[i].pos[1], cv::Scalar(0,255,0), 5);

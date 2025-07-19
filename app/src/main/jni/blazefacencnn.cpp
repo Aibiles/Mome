@@ -57,14 +57,14 @@ void MyNdkCamera::on_image_render(cv::Mat &rgb) const {
     {
         ncnn::MutexLockGuard g(lock);
 
-//        if (g_blazeface) {
-//            //如果模型加载成功 此处进行人脸识别
-//            std::vector<Object> face;
-//            g_blazeface->detect(rgb, face);
-//            g_blazeface->draw(rgb, face);
-//        } else {
-//            __android_log_print(ANDROID_LOG_WARN, "BlazeFaceNcnn", "g_blazeface is null");
-//        }
+        if (g_blazeface) {
+            //如果模型加载成功 此处进行人脸识别
+            std::vector<Object> face;
+            g_blazeface->detect(rgb, face);
+            g_blazeface->draw(rgb, face);
+        } else {
+            __android_log_print(ANDROID_LOG_WARN, "BlazeFaceNcnn", "g_blazeface is null");
+        }
 
         if (g_paleenseg) {
             //如果模型加载成功 此处进行车道线分割和汽车人识别
@@ -280,4 +280,12 @@ Java_com_example_mome_BlazeFaceNcnn_setOutputWindow(JNIEnv *env, jobject thiz,
     return JNI_TRUE;
 }
 
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_mome_BlazeFaceNcnn_release(JNIEnv *env, jobject thiz) {
+    // TODO: implement release()
+    g_blazeface = NULL;
+    g_paleenseg = NULL;
 }

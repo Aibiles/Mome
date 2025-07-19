@@ -47,6 +47,8 @@ public class BlazeFaceNcnn {
 
     public native void detect(Bitmap bitmap);
 
+    public native void release();
+
     static {
         // 首先尝试加载OpenCV
         if (!OpenCVLoader.initLocal()) {

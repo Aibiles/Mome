@@ -18,16 +18,10 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <FrameLayout
-            android:id="@+id/mjpegFrame"
+        <SurfaceView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-            <!-- 前方摄像头视图 -->
-            <com.github.niqdev.mjpeg.MjpegSurfaceView
-                android:id="@+id/mjpegView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-        </FrameLayout>
+            android:layout_height="match_parent"
+            android:id="@+id/surface"/>
 
         <ImageView
             android:layout_width="match_parent"
